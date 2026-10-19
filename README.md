@@ -61,6 +61,9 @@ src/
     ActivityFeed.tsx        # live sensor/event log
     StatsHeader.tsx          # header bar: occupancy ring + Live Traffic toggle
     HardwarePanel.tsx        # Connect Arduino button, live sensor readings, sensor emulator
+  pages/                 # the Simulation study page
+  sim/                   # the simulation engine (see below)
+  Root.tsx               # top bar + the two parts of the site (live demo, simulation study)
   hardware/              # talking to the real board (Web Serial) + sensor logic
     useSerialSensors.ts    # USB serial connection
     useHardware.ts          # real board or emulator -> "car at entrance" / "spot taken"
@@ -133,6 +136,42 @@ streams the same kind of data, and you slide the two distances to put a "car" in
 
 **Sensor notes:** the sketch converts the analog voltage to centimetres with the lab formula
 `d = 29.988 * V^(-1.173)` (readings below 0.4 V count as "far", 80 cm).
+
+## Simulation study: how much driving does the app save?
+
+The site has a second page, **Simulation study** (top bar, or `#/simulation`), and the repo has the code
+behind it. We simulate thousands of days in the lot twice, with the same cars every time: once with every
+driver finding a spot on their own, once with every driver routed by the app (Dijkstra's shortest path to
+the nearest free spot), and compare the distance driven from the entrance to the spot.
+
+**Headline (seed 2026, 5,000 simulated days, our 32-spot lot):** **11.7% less driving to find a spot**
+(95% CI 11.6% to 11.8%), from 31.1 m to 27.5 m per car on average, compared with a methodical driver who has
+no app. The saving is 56% against a driver who just follows the lanes, and it grows with the size of the lot
+(12% at 32 spots, 33% at 288). The full write-up with every graph is in
+[`docs/Smart-Parking-Simulation-Report.pdf`](docs/Smart-Parking-Simulation-Report.pdf).
+
+```bash
+npm run simulate           # self-checks, then the full study; writes public/simulation-results.json
+npm run simulate:report    # rebuilds the PDF report from that file (needs Google Chrome; set CHROME=... if it is elsewhere)
+```
+
+```
+src/sim/
+  params.ts        every assumption in one place (lot scale, demand, how far drivers see, ...)
+  dijkstra.ts      Dijkstra with a priority queue (the app's router is BFS, the same thing for equal costs)
+  graph.ts         the lot as a graph of lane cells; all-pairs distances; what a driver can see
+  drivers.ts       the policies: the app, a methodical driver, a wandering driver
+  engine.ts        the day simulation, paired runs, confidence intervals
+  checks.ts        self-checks that must pass before a study runs (Dijkstra == the app's router, etc.)
+  experiments.ts   the full study: headline, sweeps (adoption, view distance, demand, lot size, ...)
+  charts.ts, studyCharts.ts   dependency-free SVG charts used by both the website and the PDF
+  worker.ts        runs a live simulation in a Web Worker for the "Run it yourself" panel
+src/pages/         the Simulation page (SimulationPage.tsx) and the step-by-step walkthrough
+simulation/        run.ts (CLI) and build-report.ts (PDF)
+```
+
+To try another assumption, change it in `src/sim/params.ts` and run `npm run simulate`, or use the
+"Run it yourself" panel on the page. The same seed always gives the same numbers.
 
 ## Working on this as a team
 
