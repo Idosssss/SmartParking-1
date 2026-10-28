@@ -16,8 +16,27 @@ interface Published {
 const pct = (v: number, digits = 1) => `${(v * 100).toFixed(digits)}%`;
 const REPO_URL = 'https://github.com/AvivEli1/SmartParking';
 
+/** An SVG chart that draws itself in (lines trace, bars grow) the first time it scrolls into view. */
 function Chart({ svg }: { svg: string }) {
-  return <div className="sim-chart" dangerouslySetInnerHTML={{ __html: svg }} />;
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || typeof IntersectionObserver === 'undefined') return;
+    el.classList.add('can-animate');
+    el.classList.remove('is-visible');
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) {
+          el.classList.add('is-visible');
+          io.disconnect();
+        }
+      },
+      { threshold: 0.25 },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [svg]);
+  return <div ref={ref} className="sim-chart" dangerouslySetInnerHTML={{ __html: svg }} />;
 }
 
 function Figure({ title, svg, children }: { title: string; svg: string; children: React.ReactNode }) {

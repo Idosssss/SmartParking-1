@@ -15,7 +15,9 @@
   --positive: #1e7b4f;
   --negative: #c4242a;
   --warning: #92400e;
-  --primary: #1d1f20;
+  --primary: #1b6c80;
+  --primary-hover: #155a6b;
+  --lift: 0 12px 32px -20px rgba(16, 42, 52, 0.28);
 
   --pill-positive-bg: #dcfae5;
   --pill-positive-ink: #04250e;
@@ -36,8 +38,8 @@
   --sidebar-width: 224px;
   --topbar-height: 48px;
 
-  --font: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-  --font-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+  --font: 'Plus Jakarta Sans Variable', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono Variable', ui-monospace, 'SF Mono', Menlo, monospace;
   --fs-title: 22px;
   --fs-section: 16px;
   --fs-kpi: 30px;
@@ -69,6 +71,7 @@ body {
   color: var(--text);
   font-size: var(--fs-body);
   line-height: 1.5;
+  font-weight: 450;
   font-variant-numeric: tabular-nums;
   -webkit-font-smoothing: antialiased;
 }
@@ -136,8 +139,8 @@ select {
 }
 
 .btn--primary:hover:not(:disabled) {
-  background: #000;
-  border-color: #000;
+  background: var(--primary-hover);
+  border-color: var(--primary-hover);
 }
 
 .btn--primary:disabled {
@@ -225,4 +228,134 @@ select {
   100% {
     box-shadow: 0 0 0 6px rgba(30, 123, 79, 0);
   }
+}
+
+/* Panels answer the pointer with a quiet lift: a darker edge and a soft shadow (only while hovered). */
+.hw,
+.activity,
+.lot-card,
+.sim-figure,
+.rel__table,
+.kpis,
+.sim-stats,
+.sim-walk {
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.hw:hover,
+.activity:hover,
+.lot-card:hover,
+.sim-figure:hover,
+.rel__table:hover {
+  border-color: #d0d8db;
+  box-shadow: var(--lift);
+}
+
+/* Toast notifications for the moments that matter */
+.toasts {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: min(360px, calc(100vw - 32px));
+  pointer-events: none;
+}
+
+.toast {
+  pointer-events: auto;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 12px 12px 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: 0 16px 40px -16px rgba(16, 42, 52, 0.35);
+  font-size: 14px;
+  line-height: 1.4;
+  animation: toast-in 0.32s cubic-bezier(0.2, 0.9, 0.3, 1.2) both;
+}
+
+.toast--leaving {
+  animation: toast-out 0.22s ease forwards;
+}
+
+.toast__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-top: 6px;
+  flex: none;
+  background: var(--accent);
+}
+
+.toast--success .toast__dot {
+  background: var(--positive);
+}
+
+.toast--warning .toast__dot {
+  background: var(--negative);
+}
+
+.toast__text {
+  flex: 1;
+}
+
+.toast__close {
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex: none;
+}
+
+.toast__close:hover {
+  background: var(--raised);
+  color: var(--text);
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes toast-out {
+  to {
+    opacity: 0;
+    transform: translateX(16px);
+  }
+}
+
+@media (max-width: 900px) {
+  .toasts {
+    right: 16px;
+    bottom: 16px;
+  }
+}
+
+/* Weights tuned for Plus Jakarta Sans on screen */
+h1,
+h2,
+h3 {
+  font-weight: 650;
+}
+
+b,
+strong {
+  font-weight: 650;
 }

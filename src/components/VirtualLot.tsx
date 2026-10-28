@@ -22,7 +22,7 @@ const COLORS = {
   route: '#1b6c80',
 };
 
-const FONT = '"IBM Plex Sans", -apple-system, "Segoe UI", sans-serif';
+const FONT = '"Plus Jakarta Sans Variable", -apple-system, "Segoe UI", sans-serif';
 
 export interface CarVisual {
   row: number;
@@ -264,6 +264,18 @@ export default function VirtualLot({
     // Route: flowing dashed line + big directional arrows
     if (path && path.length > 1) {
       const pts = path.map(([r, c]) => [cx(c), cy(r)] as const);
+
+      // A faint full route underneath, so the whole way to the spot reads at a glance.
+      ctx.save();
+      ctx.strokeStyle = 'rgba(27, 108, 128, 0.12)';
+      ctx.lineWidth = 14;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.beginPath();
+      ctx.moveTo(pts[0][0], pts[0][1]);
+      for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]);
+      ctx.stroke();
+      ctx.restore();
 
       ctx.save();
       ctx.strokeStyle = 'rgba(27, 108, 128, 0.5)';

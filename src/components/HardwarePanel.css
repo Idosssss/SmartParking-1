@@ -75,8 +75,8 @@
 }
 
 .hw__button:hover:not(:disabled) {
-  background: #000;
-  border-color: #000;
+  background: var(--primary-hover);
+  border-color: var(--primary-hover);
 }
 
 .hw__button:disabled {

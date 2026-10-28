@@ -1,4 +1,5 @@
 import './LotHeader.css';
+import { useCountUp } from './useCountUp';
 
 interface LotHeaderProps {
   free: number;
@@ -16,8 +17,11 @@ const SPOT_STATE_TEXT = { offline: 'Sensor not connected', open: 'Sensor reads o
 
 /** The title row and the four numbers that say how the lot is doing right now. */
 export default function LotHeader({ free, total, liveTraffic, onToggleLiveTraffic, boardLabel, boardTone, realSpotId, hardwareActive, realSpotState }: LotHeaderProps) {
-  const occupied = total - free;
-  const pct = total === 0 ? 0 : Math.round((occupied / total) * 100);
+  const occupiedNow = total - free;
+  const pctNow = total === 0 ? 0 : Math.round((occupiedNow / total) * 100);
+  const freeShown = useCountUp(free);
+  const occupied = useCountUp(occupiedNow);
+  const pct = useCountUp(pctNow);
 
   return (
     <>
@@ -49,7 +53,7 @@ export default function LotHeader({ free, total, liveTraffic, onToggleLiveTraffi
           <span className="kpi__label">Free spots</span>
           <span className="kpi__value">
             <span className="kpi__num" key={free}>
-              {free}
+              {freeShown}
             </span>
             <span className="kpi__unit"> of {total}</span>
           </span>
@@ -57,7 +61,7 @@ export default function LotHeader({ free, total, liveTraffic, onToggleLiveTraffi
         <div className="kpi">
           <span className="kpi__label">Occupied</span>
           <span className="kpi__value">
-            <span className="kpi__num" key={occupied}>
+            <span className="kpi__num" key={occupiedNow}>
               {occupied}
             </span>
           </span>
@@ -65,7 +69,7 @@ export default function LotHeader({ free, total, liveTraffic, onToggleLiveTraffi
         <div className="kpi">
           <span className="kpi__label">Occupancy</span>
           <span className="kpi__value">
-            <span className="kpi__num" key={pct}>
+            <span className="kpi__num" key={pctNow}>
               {pct}
             </span>
             <span className="kpi__unit">%</span>

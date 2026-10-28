@@ -16,8 +16,8 @@
     "test:e2e": "node tests/e2e/board.e2e.mjs && node tests/e2e/parking.e2e.mjs"
   },
   "dependencies": {
-    "@fontsource/ibm-plex-mono": "^5.3.0",
-    "@fontsource/ibm-plex-sans": "^5.3.0",
+    "@fontsource-variable/jetbrains-mono": "^5.3.0",
+    "@fontsource-variable/plus-jakarta-sans": "^5.3.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8"
   },

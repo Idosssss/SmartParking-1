@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import App from './App';
 import Icon, { type IconName } from './components/Icons';
 import SimulationPage from './pages/SimulationPage';
@@ -30,6 +30,14 @@ export default function Root() {
   const [visitedSimulation, setVisitedSimulation] = useState(route === 'simulation');
   const [menuOpen, setMenuOpen] = useState(false);
   const sheetRef = useRef<HTMLElement>(null);
+  const navRef = useRef<HTMLElement>(null);
+  const [indicator, setIndicator] = useState<{ top: number; height: number } | null>(null);
+
+  // The grey "you are here" pill slides between pages instead of jumping.
+  useLayoutEffect(() => {
+    const active = navRef.current?.querySelector<HTMLElement>('[aria-current="page"]');
+    if (active) setIndicator({ top: active.offsetTop, height: active.offsetHeight });
+  }, [route]);
 
   useEffect(() => {
     const onChange = () => {
@@ -57,7 +65,8 @@ export default function Root() {
           <span className="sidebar__scope-meta">Lot A · 32 spots · 1 real sensor</span>
         </div>
 
-        <nav className="sidebar__nav" aria-label="Pages">
+        <nav className="sidebar__nav sidebar__nav--pages" aria-label="Pages" ref={navRef}>
+          {indicator && <span className="sidebar__indicator" style={{ transform: `translateY(${indicator.top}px)`, height: indicator.height }} aria-hidden="true" />}
           {NAV.map((item) => (
             <a key={item.route} href={item.href} className="sidebar__item" aria-current={route === item.route ? 'page' : undefined}>
               <Icon name={item.icon} />

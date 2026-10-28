@@ -21,7 +21,7 @@ export const COLORS = {
   spotTaken: '#c5cdd1',
 };
 
-const FONT = `'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif`;
+const FONT = `'Plus Jakarta Sans Variable', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif`;
 
 export function esc(text: string): string {
   return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -134,12 +134,12 @@ export function lineChart(o: LineChartOptions): string {
     if (s.points.some((p) => p.lo !== undefined && p.hi !== undefined)) {
       const upper = s.points.map((p) => `${sx(tx(p.x))},${sy(p.hi ?? p.y)}`);
       const lower = s.points.map((p) => `${sx(tx(p.x))},${sy(p.lo ?? p.y)}`).reverse();
-      g += `<polygon points="${[...upper, ...lower].join(' ')}" fill="${s.color}" opacity="0.16"/>`;
+      g += `<polygon class="fade" points="${[...upper, ...lower].join(' ')}" fill="${s.color}" opacity="0.16"/>`;
     }
     if (s.area) {
-      g += `<polygon points="${m.l + 0},${sy(ysc.min)} ${pts.map((p) => p.join(',')).join(' ')} ${pts[pts.length - 1][0]},${sy(ysc.min)}" fill="${s.color}" opacity="0.18"/>`;
+      g += `<polygon class="fade" points="${m.l + 0},${sy(ysc.min)} ${pts.map((p) => p.join(',')).join(' ')} ${pts[pts.length - 1][0]},${sy(ysc.min)}" fill="${s.color}" opacity="0.18"/>`;
     }
-    g += `<polyline points="${pts.map((p) => p.join(',')).join(' ')}" fill="none" stroke="${s.color}" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round" ${s.dashed ? 'stroke-dasharray="6 4"' : ''}/>`;
+    g += `<polyline ${s.dashed ? '' : 'class="draw" pathLength="1"'} points="${pts.map((p) => p.join(',')).join(' ')}" fill="none" stroke="${s.color}" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round" ${s.dashed ? 'stroke-dasharray="6 4"' : ''}/>`;
     if (s.markers) {
       s.points.forEach((p, i) => {
         g += `<circle cx="${pts[i][0]}" cy="${pts[i][1]}" r="3.8" fill="#fff" stroke="${s.color}" stroke-width="2.2"><title>${esc(s.name)}: ${xf(p.x)} → ${yf(p.y)}</title></circle>`;
@@ -209,7 +209,7 @@ export function barChart(o: BarChartOptions): string {
     o.series.forEach((s, si) => {
       const v = s.values[ci];
       const x = gx + barW * si;
-      g += `<rect x="${x + 1}" y="${sy(v)}" width="${Math.max(barW - 2, 1)}" height="${Math.max(h - m.b - sy(v), 0)}" rx="3" fill="${s.color}"><title>${esc(s.name)} · ${esc(cat)}: ${vf(v)}</title></rect>`;
+      g += `<rect class="grow" style="--i:${ci}" x="${x + 1}" y="${sy(v)}" width="${Math.max(barW - 2, 1)}" height="${Math.max(h - m.b - sy(v), 0)}" rx="3" fill="${s.color}"><title>${esc(s.name)} · ${esc(cat)}: ${vf(v)}</title></rect>`;
       if (s.lo && s.hi) {
         const cx = x + barW / 2;
         g += `<line x1="${cx}" x2="${cx}" y1="${sy(s.lo[ci])}" y2="${sy(s.hi[ci])}" stroke="${COLORS.text}" stroke-width="1.3"/>`;

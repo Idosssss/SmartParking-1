@@ -5,6 +5,8 @@ import PhoneApp, { type NavStatus } from './components/PhoneApp';
 import ActivityFeed, { type ActivityEntry } from './components/ActivityFeed';
 import LotHeader from './components/LotHeader';
 import ReliabilityPanel from './components/ReliabilityPanel';
+import { Toasts } from './components/Toasts';
+import { useToasts } from './components/useToasts';
 import HardwarePanel from './components/HardwarePanel';
 import { useHardware } from './hardware/useHardware';
 import { generateLot } from './lot/generateLot';
@@ -74,6 +76,7 @@ function App() {
   const [liveTraffic, setLiveTraffic] = useState(false);
   const [clock, setClock] = useState(() => performance.now());
   const hw = useHardware();
+  const { toasts, notify, dismiss } = useToasts();
   const [hardwareSpotId, setHardwareSpotId] = useState(DEFAULT_HARDWARE_SPOT_ID);
   const [preferRealSpot, setPreferRealSpot] = useState(true);
   // False while the real sensor is waiting to be moved/cleared after a car parked in its spot.
@@ -185,7 +188,10 @@ function App() {
     if (fromHardware && userStatus === 'arrived') handleReset();
     else if (userStatus !== 'idle') return;
     if (freeCount === 0) {
-      if (fromHardware) logActivity('Car at the entrance but the lot is full', 'warning');
+      if (fromHardware) {
+        logActivity('Car at the entrance but the lot is full', 'warning');
+        notify('A car is at the entrance, but the lot is full.', 'warning');
+      }
       return;
     }
     setUserStatus('detecting');
@@ -265,6 +271,7 @@ function App() {
     setHardwareSpotId(next.spot.id);
     setHwArmed(false);
     logActivity(`Spot ${fromSpotId} is taken. Move the real sensor to Spot ${next.spot.id}`, 'info');
+    notify(`Spot ${fromSpotId} is taken. Move the real sensor to Spot ${next.spot.id}.`, 'info');
   };
 
   // Hardware: a car newly reaching the D34 entrance sensor starts the same flow as the simulation.
@@ -280,25 +287,39 @@ function App() {
   }, [hw.entranceDetected, hw.active]);
 
   useEffect(() => {
-    if (hw.serial.status === 'connected') logActivity('Arduino connected over USB', 'success');
-    else if (hw.serial.status === 'error') logActivity('Arduino connection lost', 'warning');
+    if (hw.serial.status === 'connected') {
+      logActivity('Arduino connected over USB', 'success');
+      notify('Board connected over USB.', 'success');
+    } else if (hw.serial.status === 'error') {
+      logActivity('Arduino connection lost', 'warning');
+      notify(hw.serial.error ?? 'The board connection was lost.', 'warning');
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hw.serial.status]);
 
   // The board went quiet, or reports a broken sensor: say so in the feed instead of failing silently.
   useEffect(() => {
-    if (hw.device.stale) logActivity('The board stopped sending data. Waiting for it to come back.', 'warning');
+    if (hw.device.stale) {
+      logActivity('The board stopped sending data. Waiting for it to come back.', 'warning');
+      notify('The board stopped sending data. Detection is paused until it is back.', 'warning');
+    }
     else if (hw.serial.status === 'connected') logActivity('Board data is flowing again', 'success');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hw.device.stale]);
 
   useEffect(() => {
-    if (hw.device.faultEntrance !== 'none') logActivity(`Entrance sensor fault: ${hw.device.faultEntrance.replace('_', ' ')}`, 'warning');
+    if (hw.device.faultEntrance !== 'none') {
+      logActivity(`Entrance sensor fault: ${hw.device.faultEntrance.replace('_', ' ')}`, 'warning');
+      notify('The entrance sensor looks broken. Check its wires.', 'warning');
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hw.device.faultEntrance]);
 
   useEffect(() => {
-    if (hw.device.faultSpot !== 'none') logActivity(`Spot sensor fault: ${hw.device.faultSpot.replace('_', ' ')}`, 'warning');
+    if (hw.device.faultSpot !== 'none') {
+      logActivity(`Spot sensor fault: ${hw.device.faultSpot.replace('_', ' ')}`, 'warning');
+      notify('The spot sensor looks broken. Check its wires.', 'warning');
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hw.device.faultSpot]);
 
@@ -451,6 +472,7 @@ function App() {
             sensorConfirmedParked ? `Spot sensor confirmed. Parked at Spot ${spotId}` : `Parked at Spot ${spotId}`,
             'success',
           );
+          if (sensorConfirmedParked) notify(`The spot sensor confirmed the car. Parked at Spot ${spotId}.`, 'success');
         }
         animating = true;
       }
@@ -499,6 +521,9 @@ function App() {
 
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
+    // The loop is started once and reads everything that changes through refs. notify is stable, and
+    // advanceHardwareSpot only reads refs, so the first render's copies are the right ones.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // While heading for the real spot the car stops one cell short, until the D35 sensor confirms a real car parked.
@@ -627,6 +652,7 @@ function App() {
       </div>
 
       <ReliabilityPanel hw={hw} />
+      <Toasts toasts={toasts} onDismiss={dismiss} />
     </div>
   );
 }
