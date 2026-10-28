@@ -7,7 +7,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
-const URL_ = process.env.E2E_URL ?? 'http://localhost:5173/';
+const URL_ = process.env.E2E_URL ?? 'http://localhost:5173/#/demo';
 
 const CHROME = process.env.CHROME ?? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
 const port = 9333;
@@ -66,6 +66,14 @@ try {
   await evaluate('Object.assign(window.__dev, { entrance: 80, car: false })');
   await shot('1-connected.png');
 
+  // the live trace plots what the board sends
+  const trace = await evaluate(`(() => {
+    const lines = document.querySelectorAll('.trace__line');
+    return { lines: lines.length, points: lines[0]?.getAttribute('points')?.split(' ').length ?? 0, text: document.querySelector('.trace')?.innerText ?? '' };
+  })()`);
+  check('the live sensor trace draws both sensors', trace.lines === 2 && trace.points > 5, `${trace.points} points`);
+  check('the trace shows the current distances', /Entrance D34\s*[\d.]+ cm/.test(trace.text) && /Spot D35\s*[\d.]+ cm/.test(trace.text));
+
   // the board goes silent
   await evaluate('window.__dev.mute = true');
   await sleep(3500);
@@ -116,6 +124,20 @@ try {
     return window.__dev.written.join('|');
   })()`);
   check('moving a trigger slider sends SET to the board', /SET (ENTRANCE|SPOT)_CM 22/.test(sent), sent);
+
+  // the frame: theme switch and the overview page
+  await evaluate('window.dispatchEvent(new KeyboardEvent("keydown", { key: "d" }))');
+  const theme1 = await evaluate('document.documentElement.dataset.theme');
+  await evaluate('window.dispatchEvent(new KeyboardEvent("keydown", { key: "d" }))');
+  const theme2 = await evaluate('document.documentElement.dataset.theme');
+  check('D switches between the dark and light theme', theme1 !== theme2 && ['dark', 'light'].includes(theme1), `${theme1} -> ${theme2}`);
+  await evaluate('window.dispatchEvent(new KeyboardEvent("keydown", { key: "1" }))');
+  await sleep(600);
+  const overview = await evaluate('document.querySelector(".ov")?.innerText ?? ""');
+  check('key 1 opens the overview page', /How the pieces talk/.test(overview));
+  check('the board stays connected while another page is open', /Board connected/.test(await text()));
+  await evaluate('window.dispatchEvent(new KeyboardEvent("keydown", { key: "2" }))');
+  await sleep(400);
 
   // disconnect
   await click('Disconnect Arduino');

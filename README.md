@@ -6,6 +6,8 @@ An IoT parking system: an **ESP32** with two IR sensors and an LED strip senses 
 **web app** finds the nearest free spot (Dijkstra) and guides the driver there, and a **simulation study**
 measures how much driving that saves.
 
+![The overview page](docs/img/overview.png)
+
 ![The live demo connected to a board](docs/img/app-connected.png)
 
 *(screenshots use a simulated board)*
@@ -22,6 +24,13 @@ measures how much driving that saves.
 
 ![The Reliability section, here with a noisy entrance sensor](docs/img/app-reliability.png)
 - **Is configurable** from the app: trigger distances, one-click calibration, LED brightness, mock mode.
+- **Shows its data:** a live graph of both IR sensors with their trigger distances, session counters (cars guided,
+  average drive, reroutes) with an occupancy chart, and CSV export of the readings and the event log.
+
+![Session counters and the live sensor trace](docs/img/app-session-trace.png)
+- **Is pleasant to use:** light and dark theme, keyboard shortcuts (`?` lists them), works on a phone.
+
+![The live demo in the dark theme](docs/img/app-dark.png)
 - **Is measured:** 11.7% less driving to find a spot in our 32-spot lot (33% in a 288-spot lot), see below.
 
 ## Try it
@@ -32,7 +41,7 @@ You need [Node.js](https://nodejs.org/) 18+ and **Chrome or Edge** (for the USB 
 git clone https://github.com/AvivEli1/SmartParking.git
 cd SmartParking
 npm install
-npm run dev          # open http://localhost:5173
+npm run dev          # open http://localhost:5173 (the live demo is at #/demo)
 ```
 
 No board? Open **No board? Emulate the sensors** in the Hardware panel. With a board: flash it
@@ -66,7 +75,8 @@ src/
   lot/                  the lot model, Dijkstra / BFS routing, directions (no React here)
   components/           the UI: lot map, phone mockup, hardware panel, feed
   config/               all tunable numbers, remembered settings
-  sim/, pages/          the simulation study and its page
+  pages/                the Overview and Simulation study pages
+  sim/                  the simulation study (no React here)
 tests/                  app tests
 simulation/             command-line runner and PDF report builder
 docs/                   documentation
@@ -84,7 +94,8 @@ firmware for the ESP32 on every push.
 
 ## Simulation study: how much driving does the app save?
 
-The site has a second page, **Simulation study** (top bar, or `#/simulation`), and the repo has the code
+The site has three pages: **Overview** (`#/`, what the system is and how the parts talk), **Live demo**
+(`#/demo`) and **Simulation study** (`#/simulation`). The study page and the repo hold the code
 behind it. We simulate thousands of days in the lot twice, with the same cars every time: once with every
 driver finding a spot on their own, once with every driver routed by the app (Dijkstra's shortest path to
 the nearest free spot), and compare the distance driven from the entrance to the spot.

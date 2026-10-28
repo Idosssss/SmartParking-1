@@ -68,12 +68,12 @@
 }
 
 .legend__swatch--free {
-  background: #fff;
-  border: 1px solid #aab3b7;
+  background: var(--surface);
+  border: 1px solid var(--faint);
 }
 
 .legend__swatch--occupied {
-  background: #6c7478;
+  background: var(--occupied-swatch);
 }
 
 .legend__swatch--route {
@@ -82,7 +82,7 @@
 }
 
 .legend__swatch--ambient {
-  background: #8a6a1f;
+  background: var(--ambient);
   border-radius: 50%;
 }
 
@@ -117,6 +117,21 @@
   }
 
   .live__side {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Session numbers next to the live sensor trace */
+.live__row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--gap);
+  margin-top: var(--gap);
+  align-items: start;
+}
+
+@media (max-width: 1100px) {
+  .live__row {
     grid-template-columns: minmax(0, 1fr);
   }
 }

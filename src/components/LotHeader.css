@@ -52,7 +52,7 @@
   width: 28px;
   height: 16px;
   border-radius: 999px;
-  background: #b9c1c5;
+  background: var(--switch-off);
   transition: background-color 0.15s ease;
   margin-right: 6px;
 }
@@ -68,7 +68,7 @@
   width: 12px;
   height: 12px;
   border-radius: 50%;
-  background: #fff;
+  background: var(--knob);
   transition: transform 0.15s ease;
 }
 

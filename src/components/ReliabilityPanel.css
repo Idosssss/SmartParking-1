@@ -67,7 +67,7 @@
   height: 8px;
   border-radius: 50%;
   flex: none;
-  background: #9aa3a7;
+  background: var(--dot-idle);
 }
 
 .rel__status--ok .rel__status-dot {
@@ -79,7 +79,7 @@
 }
 
 .rel__status--warn .rel__status-dot {
-  background: #c08a1f;
+  background: var(--amber);
 }
 
 .rel__status--bad {

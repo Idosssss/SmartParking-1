@@ -5,6 +5,8 @@ import PhoneApp, { type NavStatus } from './components/PhoneApp';
 import ActivityFeed, { type ActivityEntry } from './components/ActivityFeed';
 import LotHeader from './components/LotHeader';
 import ReliabilityPanel from './components/ReliabilityPanel';
+import SensorTrace from './components/SensorTrace';
+import SessionPanel, { type SessionStats } from './components/SessionPanel';
 import { Toasts } from './components/Toasts';
 import { useToasts } from './components/useToasts';
 import HardwarePanel from './components/HardwarePanel';
@@ -24,6 +26,7 @@ import {
   REROUTE_STEAL_CHANCE,
   SEARCH_MS,
 } from './config/constants';
+import { ignoreShortcut } from './shortcuts';
 
 interface AmbientCar {
   id: string;
@@ -64,7 +67,8 @@ function timeNow() {
   return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 }
 
-function App() {
+/** The live demo. `active` is false while another page is showing (the demo keeps running, hidden). */
+function App({ active = true }: { active?: boolean }) {
   const [lot, setLot] = useState(() => generateLot());
   const [userStatus, setUserStatus] = useState<NavStatus>('idle');
   const [userRoute, setUserRoute] = useState<RouteResult | null>(null);
@@ -75,6 +79,7 @@ function App() {
   const [activity, setActivity] = useState<ActivityEntry[]>([]);
   const [liveTraffic, setLiveTraffic] = useState(false);
   const [clock, setClock] = useState(() => performance.now());
+  const [session, setSession] = useState<SessionStats>(() => ({ startedAt: Date.now(), trips: 0, drivenCells: 0, reroutes: 0, sensorConfirmed: 0 }));
   const hw = useHardware();
   const { toasts, notify, dismiss } = useToasts();
   const [hardwareSpotId, setHardwareSpotId] = useState(DEFAULT_HARDWARE_SPOT_ID);
@@ -200,6 +205,22 @@ function App() {
       'info',
     );
   };
+
+  // F sends a car in, T toggles live traffic. The ref always holds this render's handler.
+  const findSpotRef = useRef(handleFindSpot);
+  useEffect(() => {
+    findSpotRef.current = handleFindSpot;
+  });
+  useEffect(() => {
+    if (!active) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (ignoreShortcut(e)) return;
+      if (e.key === 'f' || e.key === 'F') findSpotRef.current();
+      else if (e.key === 't' || e.key === 'T') setLiveTraffic((on) => !on);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [active]);
 
   // Hardware: the real D35 sensor decides whether the hardware spot is taken.
   useEffect(() => {
@@ -434,6 +455,7 @@ function App() {
             userRouteStartRef.current = now;
             setUserRoute(alt);
             setUserRouteStart(now);
+            setSession((st) => ({ ...st, reroutes: st.reroutes + 1, drivenCells: st.drivenCells + idx }));
             const notice = `Spot ${route.spot.id} was just taken — rerouting to ${alt.spot.id}`;
             setRerouteNotice(notice);
             logActivity(`${notice}`, 'warning');
@@ -456,6 +478,12 @@ function App() {
             setUserRouteStart(snapStart);
           }
           userStatusRef.current = 'arrived';
+          setSession((st) => ({
+            ...st,
+            trips: st.trips + 1,
+            drivenCells: st.drivenCells + route.path.length - 1,
+            sensorConfirmed: st.sensorConfirmed + (sensorConfirmedParked ? 1 : 0),
+          }));
           setLot((prev) => ({
             ...prev,
             spots: prev.spots.map((s) => (s.id === spotId ? { ...s, occupied: true } : s)),
@@ -649,6 +677,11 @@ function App() {
             onMoveSpot={moveHardwareSpot}
           />
         </section>
+      </div>
+
+      <div className="live__row">
+        <SessionPanel stats={session} occupied={lot.spots.length - freeCount} total={lot.spots.length} activity={activity} />
+        <SensorTrace hw={hw} />
       </div>
 
       <ReliabilityPanel hw={hw} />

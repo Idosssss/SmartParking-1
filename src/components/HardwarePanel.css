@@ -31,7 +31,7 @@
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #b4bcc0;
+  background: var(--dot-idle);
 }
 
 .hw__status--live {
@@ -63,7 +63,7 @@
   border-radius: var(--radius-control);
   border: 1px solid var(--primary);
   background: var(--primary);
-  color: #fff;
+  color: var(--on-primary);
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
@@ -80,8 +80,8 @@
 }
 
 .hw__button:disabled {
-  background: #b8bec1;
-  border-color: #b8bec1;
+  background: var(--disabled);
+  border-color: var(--disabled);
   cursor: default;
 }
 
@@ -93,7 +93,7 @@
 
 .hw__button--ghost:hover:not(:disabled) {
   background: var(--raised);
-  border-color: #aeb7bb;
+  border-color: var(--control-hover);
 }
 
 .hw__note {
@@ -157,7 +157,7 @@
 
 .hw__chip--on {
   background: var(--accent-soft);
-  color: #124a59;
+  color: var(--accent-ink);
 }
 
 .hw__bar {
@@ -249,7 +249,7 @@
   line-height: 1.45;
   color: var(--pill-warning-ink);
   background: var(--pill-warning-bg);
-  border: 1px solid #fde68a;
+  border: 1px solid var(--warning-edge);
   padding: 8px 10px;
   border-radius: var(--radius-control);
 }
@@ -269,8 +269,8 @@
 .hw__raw {
   margin: 0 0 4px;
   padding: 8px 10px;
-  background: #1d2022;
-  color: #e6eaec;
+  background: var(--code-bg);
+  color: var(--code-ink);
   border-radius: var(--radius-control);
   font: 11px/1.5 var(--font-mono);
   white-space: pre-wrap;

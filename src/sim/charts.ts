@@ -28,7 +28,7 @@ export function esc(text: string): string {
 }
 
 function open(w: number, h: number): string {
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}" font-family="${FONT}" style="width:100%;height:auto;display:block">`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" class="chart-svg" viewBox="0 0 ${w} ${h}" font-family="${FONT}" style="width:100%;height:auto;display:block">`;
 }
 
 const lin = (d0: number, d1: number, r0: number, r1: number) => (v: number) => (d1 === d0 ? (r0 + r1) / 2 : r0 + ((v - d0) / (d1 - d0)) * (r1 - r0));

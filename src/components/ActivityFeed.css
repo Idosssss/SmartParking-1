@@ -87,11 +87,11 @@
 }
 
 .activity__dot--warning {
-  background: #b7791f;
+  background: var(--amber);
 }
 
 .activity__dot--ambient {
-  background: #8a6a1f;
+  background: var(--ambient);
 }
 
 .activity__text {

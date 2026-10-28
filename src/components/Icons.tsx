@@ -14,6 +14,10 @@ const PATHS = {
   warning: 'M8 2.8l5.8 10H2.2zM8 7v3M8 11.6v.2',
   check: 'M3.5 8.5l3 3 6-7',
   chevron: 'M6 4l4 4-4 4',
+  home: 'M2.5 7.5L8 3l5.5 4.5M4 6.5v7h8v-7M6.5 13.5v-4h3v4',
+  sun: 'M8 10.8a2.8 2.8 0 100-5.6 2.8 2.8 0 000 5.6zM8 1.5v1.5M8 13v1.5M1.5 8H3M13 8h1.5M3.4 3.4l1 1M11.6 11.6l1 1M3.4 12.6l1-1M11.6 4.4l1-1',
+  moon: 'M13 9.6A5.5 5.5 0 016.4 3 5.5 5.5 0 1013 9.6z',
+  keyboard: 'M1.5 4.5h13v7h-13zM4 7h.01M6.5 7h.01M9 7h.01M11.5 7h.01M5 9.3h6',
 } as const;
 
 export type IconName = keyof typeof PATHS;

@@ -41,7 +41,7 @@
   margin: 0 0 14px;
   padding: 8px 10px;
   border-radius: var(--radius-control);
-  background: rgba(255, 255, 255, 0.7);
+  background: var(--scope-bg);
   border: 1px solid var(--border);
 }
 
@@ -71,18 +71,18 @@
   border-radius: 8px;
   font-size: 14px;
   font-weight: 500;
-  color: #2b3134;
+  color: var(--nav-ink);
   text-decoration: none;
   transition: background-color 0.12s ease, color 0.12s ease;
 }
 
 .sidebar__item svg {
   flex: none;
-  color: #6f777b;
+  color: var(--nav-icon);
 }
 
 .sidebar__item:hover {
-  background: rgba(0, 0, 0, 0.04);
+  background: var(--hover-tint);
   color: var(--text);
 }
 
@@ -104,7 +104,7 @@
 }
 
 .sidebar__nav--pages .sidebar__item:not([aria-current]):hover {
-  background: rgba(0, 0, 0, 0.035);
+  background: var(--hover-tint);
 }
 
 .sidebar__indicator {
@@ -170,7 +170,7 @@
 }
 
 .topbar__menu:hover {
-  background: rgba(0, 0, 0, 0.05);
+  background: var(--hover-tint);
 }
 
 .topbar__crumbs {
@@ -240,5 +240,138 @@
   .sidebar__item {
     height: 44px;
     font-size: 15px;
+  }
+}
+
+/* Top bar tools: shortcuts and the theme switch */
+.topbar__tools {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.topbar__icon {
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: var(--radius-control);
+  background: transparent;
+  color: var(--nav-icon);
+  cursor: pointer;
+  transition: background-color 0.12s ease, color 0.12s ease;
+}
+
+.topbar__icon:hover {
+  background: var(--hover-tint);
+  color: var(--text);
+}
+
+.topbar__theme-icon {
+  display: inline-flex;
+  animation: theme-spin 0.45s cubic-bezier(0.3, 1.4, 0.5, 1);
+}
+
+@keyframes theme-spin {
+  from {
+    transform: rotate(-90deg) scale(0.5);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+
+.sidebar__key {
+  margin-left: auto;
+  opacity: 0;
+  transition: opacity 0.12s ease;
+  font-size: 11px;
+  line-height: 16px;
+  min-width: 18px;
+  color: var(--muted);
+}
+
+.sidebar__item:hover .sidebar__key {
+  opacity: 1;
+}
+
+/* Keyboard shortcuts dialog */
+.keys {
+  width: min(420px, calc(100vw - 32px));
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: 0 24px 60px -20px rgba(0, 0, 0, 0.45);
+}
+
+.keys[open] {
+  animation: keys-in 0.22s cubic-bezier(0.2, 0.9, 0.3, 1.1);
+}
+
+.keys::backdrop {
+  background: rgba(8, 14, 16, 0.4);
+  backdrop-filter: blur(2px);
+}
+
+@keyframes keys-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.keys__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 12px 12px 18px;
+  border-bottom: 1px solid var(--rule);
+}
+
+.keys__head h2 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.keys__list {
+  margin: 0;
+  padding: 8px 18px 14px;
+}
+
+.keys__list div {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 7px 0;
+  font-size: 14px;
+}
+
+.keys__list div + div {
+  border-top: 1px solid var(--rule);
+}
+
+.keys__list dt {
+  min-width: 34px;
+}
+
+.keys__list dd {
+  margin: 0;
+  color: var(--muted);
+}
+
+@media (max-width: 900px) {
+  .sidebar__key {
+    display: none;
   }
 }

@@ -7,7 +7,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
-const URL_ = process.env.E2E_URL ?? 'http://localhost:5173/';
+const URL_ = process.env.E2E_URL ?? 'http://localhost:5173/#/demo';
 const CHROME = process.env.CHROME ?? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
 const port = 9335;
 const chrome = spawn(CHROME, ['--headless=new', '--disable-gpu', `--remote-debugging-port=${port}`, '--window-size=1500,1300', 'about:blank'], { stdio: 'ignore' });
@@ -113,6 +113,10 @@ try {
   await sleep(1500);
   check('second car parked at S29, both cars stay (30 free)', (await freeSpots()) === 30, `free=${await freeSpots()}`);
   await shot('regress-2-two-cars.png');
+
+  // The session panel counts both guided cars and both sensor confirmations.
+  const session = await evaluate('document.querySelector(".session__stats")?.innerText.replace(/\\s+/g, " ") ?? ""');
+  check('the session panel counts the guided cars', /Cars guided 2\b/.test(session) && /Sensor confirmed 2\b/.test(session), session);
 
   // 5. The board drops off the USB: parked cars stay parked
   await evaluate('window.__dev.mute = true');

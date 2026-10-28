@@ -1,16 +1,26 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import App from './App';
 import Icon, { type IconName } from './components/Icons';
+import OverviewPage from './pages/OverviewPage';
 import SimulationPage from './pages/SimulationPage';
+import { ignoreShortcut, SHORTCUTS } from './shortcuts';
+import { toggleTheme, useTheme } from './theme';
 import './shell.css';
 
-type Route = 'demo' | 'simulation';
+type Route = 'overview' | 'demo' | 'simulation';
 
 const REPO = 'https://github.com/AvivEli1/SmartParking';
-const routeFromHash = (): Route => (window.location.hash.startsWith('#/simulation') ? 'simulation' : 'demo');
+
+function routeFromHash(): Route {
+  const hash = window.location.hash;
+  if (hash.startsWith('#/simulation')) return 'simulation';
+  if (hash.startsWith('#/demo')) return 'demo';
+  return 'overview';
+}
 
 const NAV: { route: Route; href: string; label: string; icon: IconName }[] = [
-  { route: 'demo', href: '#/', label: 'Live demo', icon: 'lot' },
+  { route: 'overview', href: '#/', label: 'Overview', icon: 'home' },
+  { route: 'demo', href: '#/demo', label: 'Live demo', icon: 'lot' },
   { route: 'simulation', href: '#/simulation', label: 'Simulation study', icon: 'chart' },
 ];
 
@@ -20,15 +30,48 @@ const RESOURCES: { href: string; label: string; icon: IconName }[] = [
   { href: `${import.meta.env.BASE_URL}Smart-Parking-Simulation-Report.pdf`, label: 'Study report (PDF)', icon: 'file' },
 ];
 
+function ShortcutsDialog({ onClose }: { onClose: () => void }) {
+  const ref = useRef<HTMLDialogElement>(null);
+  useEffect(() => {
+    const dialog = ref.current;
+    dialog?.showModal();
+    return () => dialog?.close();
+  }, []);
+  return (
+    <dialog ref={ref} className="keys" onClose={onClose} onClick={(e) => e.target === ref.current && onClose()} aria-labelledby="keys-title">
+      <div className="keys__head">
+        <h2 id="keys-title">Keyboard shortcuts</h2>
+        <button className="topbar__icon" onClick={onClose} aria-label="Close">
+          <Icon name="close" />
+        </button>
+      </div>
+      <dl className="keys__list">
+        {SHORTCUTS.map((s) => (
+          <div key={s.what}>
+            <dt>
+              {s.keys.map((k) => (
+                <kbd key={k}>{k}</kbd>
+              ))}
+            </dt>
+            <dd>{s.what}</dd>
+          </div>
+        ))}
+      </dl>
+    </dialog>
+  );
+}
+
 /**
- * The frame of the site: a tinted sidebar and top bar around one white sheet that holds the page.
- * The live demo stays mounted (just hidden) while you read the study, so a connected Arduino and a
+ * The frame of the site: a tinted sidebar and top bar around one sheet that holds the page.
+ * The live demo stays mounted (just hidden) while you read the other pages, so a connected Arduino and a
  * running trip are not interrupted.
  */
 export default function Root() {
   const [route, setRoute] = useState<Route>(routeFromHash);
-  const [visitedSimulation, setVisitedSimulation] = useState(route === 'simulation');
+  const [visited, setVisited] = useState<Set<Route>>(() => new Set([route]));
   const [menuOpen, setMenuOpen] = useState(false);
+  const [showKeys, setShowKeys] = useState(false);
+  const theme = useTheme();
   const sheetRef = useRef<HTMLElement>(null);
   const navRef = useRef<HTMLElement>(null);
   const [indicator, setIndicator] = useState<{ top: number; height: number } | null>(null);
@@ -44,11 +87,23 @@ export default function Root() {
       const next = routeFromHash();
       setRoute(next);
       setMenuOpen(false);
-      if (next === 'simulation') setVisitedSimulation(true);
+      setVisited((v) => (v.has(next) ? v : new Set(v).add(next)));
       sheetRef.current?.scrollTo({ top: 0 });
     };
     window.addEventListener('hashchange', onChange);
     return () => window.removeEventListener('hashchange', onChange);
+  }, []);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (ignoreShortcut(e)) return;
+      const page = NAV[Number(e.key) - 1];
+      if (page) window.location.hash = page.href.slice(1);
+      else if (e.key === 'd' || e.key === 'D') toggleTheme();
+      else if (e.key === '?') setShowKeys(true);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
   }, []);
 
   const current = NAV.find((n) => n.route === route)!;
@@ -67,10 +122,13 @@ export default function Root() {
 
         <nav className="sidebar__nav sidebar__nav--pages" aria-label="Pages" ref={navRef}>
           {indicator && <span className="sidebar__indicator" style={{ transform: `translateY(${indicator.top}px)`, height: indicator.height }} aria-hidden="true" />}
-          {NAV.map((item) => (
+          {NAV.map((item, i) => (
             <a key={item.route} href={item.href} className="sidebar__item" aria-current={route === item.route ? 'page' : undefined}>
               <Icon name={item.icon} />
               {item.label}
+              <kbd className="sidebar__key" aria-hidden="true">
+                {i + 1}
+              </kbd>
             </a>
           ))}
         </nav>
@@ -104,18 +162,40 @@ export default function Root() {
           <Icon name="chevron" size={12} />
           <strong>{current.label}</strong>
         </nav>
+        <div className="topbar__tools">
+          <button className="topbar__icon only-keyboard" onClick={() => setShowKeys(true)} aria-label="Keyboard shortcuts" title="Keyboard shortcuts (?)">
+            <Icon name="keyboard" />
+          </button>
+          <button
+            className="topbar__icon topbar__theme"
+            onClick={toggleTheme}
+            aria-label={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
+            title="Theme (D)"
+          >
+            <span key={theme} className="topbar__theme-icon">
+              <Icon name={theme === 'dark' ? 'sun' : 'moon'} />
+            </span>
+          </button>
+        </div>
       </header>
 
       <main className="sheet" ref={sheetRef}>
-        {visitedSimulation && (
+        {visited.has('overview') && (
+          <div hidden={route !== 'overview'}>
+            <OverviewPage />
+          </div>
+        )}
+        {visited.has('simulation') && (
           <div hidden={route !== 'simulation'}>
             <SimulationPage />
           </div>
         )}
         <div hidden={route !== 'demo'}>
-          <App />
+          <App active={route === 'demo'} />
         </div>
       </main>
+
+      {showKeys && <ShortcutsDialog onClose={() => setShowKeys(false)} />}
     </div>
   );
 }

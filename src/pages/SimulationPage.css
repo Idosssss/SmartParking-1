@@ -109,7 +109,7 @@
   border-radius: var(--radius-control);
   border: 1px solid var(--primary);
   background: var(--primary);
-  color: #fff;
+  color: var(--on-primary);
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
@@ -128,8 +128,8 @@
 }
 
 .sim-btn:disabled {
-  background: #b8bec1;
-  border-color: #b8bec1;
+  background: var(--disabled);
+  border-color: var(--disabled);
   cursor: default;
 }
 
@@ -141,7 +141,7 @@
 
 .sim-btn--ghost:hover:not(:disabled) {
   background: var(--raised);
-  border-color: #aeb7bb;
+  border-color: var(--control-hover);
 }
 
 .sim-grid {
@@ -384,7 +384,7 @@
   padding: 0 10px;
   border-radius: var(--radius-control);
   border: 1px solid var(--control);
-  background: #fff;
+  background: var(--surface);
   width: 150px;
 }
 
@@ -462,7 +462,7 @@
 }
 
 .sim-figure:hover {
-  border-color: #cdd5d8;
+  border-color: var(--panel-hover-border);
 }
 
 /* Charts draw themselves in once, when they first come into view. Without script they are simply shown. */
@@ -509,5 +509,79 @@
 @keyframes chart-fade {
   to {
     opacity: 0.17;
+  }
+}
+
+/* Dark theme for the study's SVG charts. The charts are plain SVG strings (the PDF report uses the
+   same ones), so the dark colours are mapped here, by the light colour each mark was drawn with. */
+:root[data-theme='dark'] .chart-svg {
+  [fill='#131416'],
+  [fill='#1d1d1f'] {
+    fill: var(--text);
+  }
+  [fill='#5a6164'] {
+    fill: var(--muted);
+  }
+  [stroke='#131416'] {
+    stroke: var(--text);
+  }
+  [stroke='#e2e8ea'] {
+    stroke: var(--border);
+  }
+  [stroke='#aab3b7'] {
+    stroke: #4d5a61;
+  }
+  [stroke='#1b6c80'] {
+    stroke: var(--accent);
+  }
+  [fill='#1b6c80'] {
+    fill: var(--accent);
+  }
+  [stroke='#4c5559'] {
+    stroke: #8d989e;
+  }
+  [fill='#4c5559'] {
+    fill: #8d989e;
+  }
+  [stroke='#1e7b4f'] {
+    stroke: var(--positive);
+  }
+  [fill='#1e7b4f'] {
+    fill: var(--positive);
+  }
+  [stroke='#c4242a'] {
+    stroke: var(--negative);
+  }
+  [fill='#c4242a'] {
+    fill: var(--negative);
+  }
+  [fill='#fff'],
+  [fill='#fafafc'] {
+    fill: var(--raised);
+  }
+  [stroke='#fff'] {
+    stroke: var(--raised);
+  }
+  [fill='#eef2f4'] {
+    fill: var(--active);
+  }
+  [fill='#e4f0f3'] {
+    fill: var(--accent-soft);
+  }
+  [fill='#dcefe4'] {
+    fill: #163126;
+  }
+  [fill='#c5cdd1'] {
+    fill: #20282c;
+  }
+  [stroke='#8e8e93'] {
+    stroke: #323c41;
+  }
+  [fill='#6e6e73'] {
+    fill: #5f6c73;
+  }
+  /* the distance heat map: same hues, darker, so the light labels on top stay readable */
+  [fill^='hsl('] {
+    filter: brightness(0.55) saturate(1.15);
   }
 }

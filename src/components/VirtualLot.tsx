@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import type { GridPoint, LotModel } from '../lot/types';
+import { useTheme } from '../theme';
 
 const CELL = 56;
 const PAD = 28;
 
-const COLORS = {
+const LIGHT = {
   laneFill: '#eef2f4',
   laneDash: '#d3dadd',
   spotFree: '#ffffff',
@@ -20,6 +21,34 @@ const COLORS = {
   ambientCar: '#8a6a1f',
   ambientCarWindow: '#eadfc4',
   route: '#1b6c80',
+  routeUnder: 'rgba(27, 108, 128, 0.12)',
+  routeDash: 'rgba(27, 108, 128, 0.5)',
+  onRoute: '#ffffff',
+  tagBg: '#ffffff',
+};
+
+type Palette = typeof LIGHT;
+
+const DARK: Palette = {
+  laneFill: '#1c2327',
+  laneDash: '#323c41',
+  spotFree: '#141a1d',
+  spotFreeBorder: '#3b464c',
+  spotOccupied: '#1c2327',
+  spotOccupiedBorder: '#2a3338',
+  spotTarget: '#123039',
+  spotTargetBorder: '#5cbcd1',
+  entranceFill: '#2a9461',
+  text: '#c3ccd0',
+  car: '#5cbcd1',
+  carWindow: '#0f3540',
+  ambientCar: '#cfa54c',
+  ambientCarWindow: '#3b2f13',
+  route: '#5cbcd1',
+  routeUnder: 'rgba(92, 188, 209, 0.14)',
+  routeDash: 'rgba(92, 188, 209, 0.55)',
+  onRoute: '#06181d',
+  tagBg: '#141a1d',
 };
 
 const FONT = '"Plus Jakarta Sans Variable", -apple-system, "Segoe UI", sans-serif';
@@ -77,11 +106,11 @@ function drawCarShape(ctx: CanvasRenderingContext2D, scale: number, body: string
   ctx.fill();
 }
 
-function drawArrowHead(ctx: CanvasRenderingContext2D, x: number, y: number, angleRad: number, size: number) {
+function drawArrowHead(ctx: CanvasRenderingContext2D, c: Palette, x: number, y: number, angleRad: number, size: number) {
   ctx.save();
   ctx.translate(x, y);
   ctx.rotate(angleRad);
-  ctx.fillStyle = COLORS.route;
+  ctx.fillStyle = c.route;
   ctx.beginPath();
   ctx.moveTo(size, 0);
   ctx.lineTo(-size * 0.55, size * 0.62);
@@ -106,7 +135,7 @@ function tagRect(spotX: number, spotY: number) {
   return { x: spotX + CELL - TAG_W - 3, y: spotY + 2, w: TAG_W, h: TAG_H };
 }
 
-function drawHwTag(ctx: CanvasRenderingContext2D, x: number, y: number, active: boolean, lifted: boolean) {
+function drawHwTag(ctx: CanvasRenderingContext2D, c: Palette, x: number, y: number, active: boolean, lifted: boolean) {
   ctx.save();
   if (lifted) {
     ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
@@ -114,16 +143,16 @@ function drawHwTag(ctx: CanvasRenderingContext2D, x: number, y: number, active: 
     ctx.shadowOffsetY = 3;
   }
   roundRect(ctx, x, y, TAG_W, TAG_H, TAG_H / 2);
-  ctx.fillStyle = active || lifted ? COLORS.route : '#ffffff';
+  ctx.fillStyle = active || lifted ? c.route : c.tagBg;
   ctx.fill();
   ctx.shadowColor = 'transparent';
   if (!active && !lifted) {
-    ctx.strokeStyle = COLORS.route;
+    ctx.strokeStyle = c.route;
     ctx.lineWidth = 1.5;
     ctx.stroke();
   }
   ctx.font = `600 9px ${FONT}`;
-  ctx.fillStyle = active || lifted ? '#ffffff' : COLORS.route;
+  ctx.fillStyle = active || lifted ? c.onRoute : c.route;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillText('HW', x + TAG_W / 2, y + TAG_H / 2 + 0.5);
@@ -149,6 +178,7 @@ export default function VirtualLot({
   const [hoverTag, setHoverTag] = useState(false);
   const [dragPos, setDragPos] = useState<{ x: number; y: number } | null>(null);
   const suppressClickRef = useRef(false);
+  const theme = useTheme();
 
   const width = lot.cols * CELL + PAD * 2;
   const height = lot.rows * CELL + PAD * 2;
@@ -166,6 +196,7 @@ export default function VirtualLot({
     ctx.scale(dpr, dpr);
 
     ctx.clearRect(0, 0, width, height);
+    const colors = theme === 'dark' ? DARK : LIGHT;
 
     const cx = (col: number) => PAD + col * CELL + CELL / 2;
     const cy = (row: number) => PAD + row * CELL + CELL / 2;
@@ -176,14 +207,14 @@ export default function VirtualLot({
         if (cell.type !== 'lane') continue;
         const x = PAD + cell.col * CELL;
         const y = PAD + cell.row * CELL;
-        ctx.fillStyle = COLORS.laneFill;
+        ctx.fillStyle = colors.laneFill;
         roundRect(ctx, x + 2, y + 2, CELL - 4, CELL - 4, 8);
         ctx.fill();
       }
     }
 
     // Dashed lane center-lines for a "road" feel
-    ctx.strokeStyle = COLORS.laneDash;
+    ctx.strokeStyle = colors.laneDash;
     ctx.lineWidth = 2;
     ctx.setLineDash([6, 6]);
     ctx.beginPath();
@@ -205,14 +236,14 @@ export default function VirtualLot({
       const isTarget = spot.id === targetSpotId;
       const isHover = spot.id === hoverSpot && interactive;
 
-      let fill = COLORS.spotFree;
-      let border = COLORS.spotFreeBorder;
+      let fill = colors.spotFree;
+      let border = colors.spotFreeBorder;
       if (spot.occupied) {
-        fill = COLORS.spotOccupied;
-        border = COLORS.spotOccupiedBorder;
+        fill = colors.spotOccupied;
+        border = colors.spotOccupiedBorder;
       } else if (isTarget) {
-        fill = COLORS.spotTarget;
-        border = COLORS.spotTargetBorder;
+        fill = colors.spotTarget;
+        border = colors.spotTargetBorder;
       }
 
       ctx.fillStyle = fill;
@@ -223,7 +254,7 @@ export default function VirtualLot({
       ctx.stroke();
 
       if (isHover && !spot.occupied) {
-        ctx.strokeStyle = COLORS.spotTargetBorder;
+        ctx.strokeStyle = colors.spotTargetBorder;
         ctx.lineWidth = 2;
         roundRect(ctx, x + 3, y + 3, CELL - 6, CELL - 6, 11);
         ctx.stroke();
@@ -233,11 +264,11 @@ export default function VirtualLot({
         ctx.save();
         ctx.translate(x + CELL / 2, y + CELL / 2);
         ctx.rotate((facingAngle(lot, spot.row, spot.col) * Math.PI) / 180);
-        drawCarShape(ctx, 0.8, COLORS.car, COLORS.carWindow);
+        drawCarShape(ctx, 0.8, colors.car, colors.carWindow);
         ctx.restore();
       } else {
         ctx.font = `600 12px ${FONT}`;
-        ctx.fillStyle = isTarget ? COLORS.spotTargetBorder : COLORS.text;
+        ctx.fillStyle = isTarget ? colors.spotTargetBorder : colors.text;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText(spot.id, x + CELL / 2, y + CELL / 2);
@@ -245,14 +276,14 @@ export default function VirtualLot({
 
       if (spot.id === hardwareSpotId) {
         const tag = tagRect(x, y);
-        drawHwTag(ctx, tag.x, tag.y, hardwareActive, false);
+        drawHwTag(ctx, colors, tag.x, tag.y, hardwareActive, false);
       }
     }
 
     // Entrance marker
     const ex = PAD + lot.entrance.col * CELL;
     const ey = PAD + lot.entrance.row * CELL;
-    ctx.fillStyle = COLORS.entranceFill;
+    ctx.fillStyle = colors.entranceFill;
     roundRect(ctx, ex + 4, ey + 4, CELL - 8, CELL - 8, 10);
     ctx.fill();
     ctx.font = `600 9px ${FONT}`;
@@ -267,7 +298,7 @@ export default function VirtualLot({
 
       // A faint full route underneath, so the whole way to the spot reads at a glance.
       ctx.save();
-      ctx.strokeStyle = 'rgba(27, 108, 128, 0.12)';
+      ctx.strokeStyle = colors.routeUnder;
       ctx.lineWidth = 14;
       ctx.lineCap = 'round';
       ctx.lineJoin = 'round';
@@ -278,7 +309,7 @@ export default function VirtualLot({
       ctx.restore();
 
       ctx.save();
-      ctx.strokeStyle = 'rgba(27, 108, 128, 0.5)';
+      ctx.strokeStyle = colors.routeDash;
       ctx.lineWidth = 7;
       ctx.lineCap = 'round';
       ctx.lineJoin = 'round';
@@ -295,7 +326,7 @@ export default function VirtualLot({
         const [x2, y2] = pts[i + 1];
         const angle = Math.atan2(y2 - y1, x2 - x1);
         const isFinal = i === pts.length - 2;
-        drawArrowHead(ctx, (x1 + x2) / 2, (y1 + y2) / 2, angle, isFinal ? 15 : 12);
+        drawArrowHead(ctx, colors, (x1 + x2) / 2, (y1 + y2) / 2, angle, isFinal ? 15 : 12);
       }
     }
 
@@ -305,7 +336,7 @@ export default function VirtualLot({
       ctx.translate(cx(ac.col), cy(ac.row));
       ctx.rotate((ac.angle * Math.PI) / 180);
       ctx.globalAlpha = 0.85;
-      drawCarShape(ctx, 0.85, COLORS.ambientCar, COLORS.ambientCarWindow);
+      drawCarShape(ctx, 0.85, colors.ambientCar, colors.ambientCarWindow);
       ctx.restore();
     }
 
@@ -314,7 +345,7 @@ export default function VirtualLot({
       ctx.save();
       ctx.translate(cx(car.col), cy(car.row));
       ctx.rotate((car.angle * Math.PI) / 180);
-      drawCarShape(ctx, 1, COLORS.car, COLORS.carWindow);
+      drawCarShape(ctx, 1, colors.car, colors.carWindow);
       ctx.restore();
     }
 
@@ -326,13 +357,13 @@ export default function VirtualLot({
       if (target?.type === 'spot') {
         ctx.save();
         ctx.setLineDash([5, 4]);
-        ctx.strokeStyle = COLORS.route;
+        ctx.strokeStyle = colors.route;
         ctx.lineWidth = 2.5;
         roundRect(ctx, PAD + col * CELL + 3, PAD + row * CELL + 3, CELL - 6, CELL - 6, 11);
         ctx.stroke();
         ctx.restore();
       }
-      drawHwTag(ctx, dragPos.x - TAG_W / 2, dragPos.y - TAG_H / 2, true, true);
+      drawHwTag(ctx, colors, dragPos.x - TAG_W / 2, dragPos.y - TAG_H / 2, true, true);
     }
 
     // Sensor ping ripples
@@ -340,14 +371,14 @@ export default function VirtualLot({
       const radius = Math.max(0, 8 + p.age * 26);
       ctx.save();
       ctx.globalAlpha = Math.max(0, 1 - p.age);
-      ctx.strokeStyle = COLORS.route;
+      ctx.strokeStyle = colors.route;
       ctx.lineWidth = 2.5;
       ctx.beginPath();
       ctx.arc(cx(p.col), cy(p.row), radius, 0, Math.PI * 2);
       ctx.stroke();
       ctx.restore();
     }
-  }, [lot, car, ambientCars, path, progress, targetSpotId, pings, hardwareSpotId, hardwareActive, dragPos, hoverSpot, interactive, width, height]);
+  }, [lot, car, ambientCars, path, progress, targetSpotId, pings, hardwareSpotId, hardwareActive, dragPos, hoverSpot, interactive, width, height, theme]);
 
   const pointFromEvent = (e: React.MouseEvent<HTMLCanvasElement> | React.PointerEvent<HTMLCanvasElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { DeviceLink, type LinkStatus } from './deviceLink';
 import { deviceCommands, type DeviceConfig, type DeviceFrame } from './protocol';
 import type { SensorReading } from './sensorLogic';
@@ -69,7 +69,8 @@ export function useSerialSensors() {
   const disconnect = useCallback(() => getLink().disconnect(), [getLink]);
   const send = useCallback((command: string) => getLink().send(command), [getLink]);
 
-  const reading: SensorReading | null = frame ? { entranceCm: frame.entranceCm, spotCm: frame.spotCm } : null;
+  // A new object only when a new frame arrives, so the reading can be used to spot fresh samples.
+  const reading = useMemo<SensorReading | null>(() => (frame ? { entranceCm: frame.entranceCm, spotCm: frame.spotCm } : null), [frame]);
 
   return { supported, status, error, reading, frame, stale, config, lastReply, log, stats, connect, disconnect, send };
 }

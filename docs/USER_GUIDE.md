@@ -17,7 +17,7 @@ No board? You can still try everything with the on-screen emulator, or with the 
 1. Plug the board into the computer with a USB cable. The LED strip flashes **blue** for a moment, then shows
    **green** (spot free).
 2. Close the Arduino IDE Serial Monitor if it is open.
-3. Open the site and press **Connect Arduino**. Pick the board's port (it says CP2102 or USB Serial).
+3. Open the site. It starts on the **Overview** page; press **Open the live demo**, then **Connect Arduino**. Pick the board's port (it says CP2102 or USB Serial).
 4. The top of the Hardware panel says **Board connected** and the two sensor bars move.
    Next time, the site reconnects by itself.
 
@@ -31,6 +31,25 @@ No board? You can still try everything with the on-screen emulator, or with the 
 
 Other things to try: click a free spot to fill it, turn on **Live Traffic**, drag the **HW** tag to another
 spot, switch to the **Simulation study** page for the numbers behind the routing.
+
+Below the map:
+
+- **Live sensor readings** draws the last 30 seconds of both IR sensors with their trigger distances, and
+  shades the moments the board decided "car" or "taken". **Pause** freezes it; **Export CSV** saves the readings.
+- **This session** counts the cars guided, their average drive in metres, reroutes and sensor-confirmed parks,
+  and plots how full the lot was over time. **Export CSV** saves the summary and the whole event feed.
+
+The moon / sun button at the top right switches between the light and the dark theme.
+
+### Keyboard shortcuts
+
+| Key | Does |
+| --- | --- |
+| `1` `2` `3` | Overview, Live demo, Simulation study |
+| `F` | send a car into the lot (live demo) |
+| `T` | live traffic on or off |
+| `D` | dark or light theme |
+| `?` | show the list of shortcuts |
 
 ## What the LEDs mean
 

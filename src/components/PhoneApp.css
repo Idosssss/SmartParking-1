@@ -141,12 +141,12 @@
 .phone__reroute {
   background: var(--pill-warning-bg);
   color: var(--pill-warning-ink);
-  border: 1px solid #fde68a;
+  border: 1px solid var(--warning-edge);
 }
 
 .phone__waiting {
   background: var(--accent-soft);
-  color: #124a59;
+  color: var(--accent-ink);
 }
 
 @keyframes phone-notice-in {
@@ -223,8 +223,8 @@
 
 .phone__button {
   margin-top: 18px;
-  background: var(--accent);
-  color: #fff;
+  background: var(--primary);
+  color: var(--on-primary);
   border: none;
   font-size: 15px;
   font-weight: 500;
@@ -237,7 +237,7 @@
 }
 
 .phone__button:hover:not(:disabled) {
-  background: #155a6b;
+  background: var(--primary-hover);
 }
 
 .phone__button:active:not(:disabled) {
@@ -245,7 +245,7 @@
 }
 
 .phone__button:disabled {
-  background: #b8c3c7;
+  background: var(--disabled);
   cursor: not-allowed;
 }
 
@@ -294,7 +294,7 @@
 
 .phone__step {
   font-size: 14px;
-  color: #7b8387;
+  color: var(--faint);
   padding: 9px 12px;
   border-radius: 8px;
   transition: background-color 0.18s ease, color 0.18s ease;
@@ -309,7 +309,7 @@
 }
 
 .phone__step--done {
-  color: #7b8387;
+  color: var(--faint);
   text-decoration: line-through;
 }
 
