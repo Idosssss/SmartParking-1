@@ -23,3 +23,7 @@ dist-ssr
 *.sln
 *.sw?
 simulation/out/
+
+# WiFi passwords for the optional WiFi feature never go on GitHub
+hardware/smart_parking/secrets.h
+.taste-skill/

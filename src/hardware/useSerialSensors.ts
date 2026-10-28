@@ -1,88 +1,75 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { parseSensorLine, type SensorReading } from './sensorLogic';
+import { DeviceLink, type LinkStatus } from './deviceLink';
+import { deviceCommands, type DeviceConfig, type DeviceFrame } from './protocol';
+import type { SensorReading } from './sensorLogic';
 
-export type SerialStatus = 'idle' | 'connecting' | 'connected' | 'error';
+export type SerialStatus = LinkStatus;
 
-const BAUD_RATE = 115200;
+const LOG_LINES = 12;
 
-/** Reads sensor lines from an Arduino/ESP32 over USB using the Web Serial API (Chrome / Edge). */
+/** React wrapper around DeviceLink: connection state plus the latest decoded data from the board. */
 export function useSerialSensors() {
-  const supported = typeof navigator !== 'undefined' && !!navigator.serial;
   const [status, setStatus] = useState<SerialStatus>('idle');
   const [error, setError] = useState<string | null>(null);
-  const [reading, setReading] = useState<SensorReading | null>(null);
-  const readerRef = useRef<ReadableStreamDefaultReader<Uint8Array> | null>(null);
+  const [frame, setFrame] = useState<DeviceFrame | null>(null);
+  const [stale, setStale] = useState(false);
+  const [config, setConfig] = useState<DeviceConfig | null>(null);
+  const [lastReply, setLastReply] = useState<string | null>(null);
+  const [log, setLog] = useState<string[]>([]);
+  // Counters for the reliability view: every line received, the ones that were valid messages, and when data last arrived.
+  const [stats, setStats] = useState({ lines: 0, messages: 0, lastDataAt: null as number | null });
+  const linkRef = useRef<DeviceLink | null>(null);
 
-  const connect = useCallback(async () => {
-    if (!navigator.serial) return;
-    setError(null);
-    setStatus('connecting');
-
-    let port: SerialPort;
-    try {
-      port = await navigator.serial.requestPort();
-    } catch {
-      setStatus('idle'); // the user closed the port picker
-      return;
-    }
-
-    try {
-      await port.open({ baudRate: BAUD_RATE });
-    } catch {
-      setError('Could not open the port. Close the Arduino IDE Serial Monitor (or any other app using it) and try again.');
-      setStatus('error');
-      return;
-    }
-
-    setStatus('connected');
-    const decoder = new TextDecoder();
-    let buffer = '';
-
-    try {
-      if (port.readable) {
-        const reader = port.readable.getReader();
-        readerRef.current = reader;
-        try {
-          for (;;) {
-            const { value, done } = await reader.read();
-            if (done) break;
-            buffer += decoder.decode(value, { stream: true });
-            let newline = buffer.indexOf('\n');
-            while (newline >= 0) {
-              const parsed = parseSensorLine(buffer.slice(0, newline));
-              buffer = buffer.slice(newline + 1);
-              if (parsed) setReading(parsed);
-              newline = buffer.indexOf('\n');
-            }
+  const getLink = useCallback((): DeviceLink => {
+    if (!linkRef.current) {
+      linkRef.current = new DeviceLink(typeof navigator !== 'undefined' ? navigator.serial : undefined, {
+        onStatus: (s, e) => {
+          setStatus(s);
+          setError(e);
+          if (s !== 'connected') {
+            setFrame(null);
+            setStale(false);
+            setConfig(null);
           }
-        } finally {
-          reader.releaseLock();
-        }
-      }
-    } catch {
-      setError('Lost connection to the board (was it unplugged?).');
-      setStatus('error');
-    } finally {
-      readerRef.current = null;
-      setReading(null);
-      try {
-        await port.close();
-      } catch {
-        // already closed
-      }
-      setStatus((s) => (s === 'error' ? s : 'idle'));
+        },
+        onStale: (value) => setStale(value),
+        onLine: (line) => {
+          setLog((prev) => [...prev.slice(-(LOG_LINES - 1)), line]);
+          setStats((st) => ({ ...st, lines: st.lines + 1 }));
+        },
+        onMessage: (m) => {
+          setStats((st) => ({ ...st, messages: st.messages + 1, lastDataAt: Date.now() }));
+          if (m.kind === 'frame') setFrame(m.frame);
+          else if (m.kind === 'config') setConfig(m.config);
+          else if (m.kind === 'ack') {
+            setLastReply(m.value === undefined ? `OK: ${m.what}` : `OK: ${m.what} (${m.value})`);
+            // The board changed its own settings (calibration finished, defaults restored): read them back.
+            if (m.what === 'calibrated' || m.what === 'reset') void linkRef.current?.send(deviceCommands.get());
+          }
+          else if (m.kind === 'error') setLastReply(`Board says: ${m.message}`);
+        },
+      });
     }
+    return linkRef.current;
   }, []);
 
-  const disconnect = useCallback(() => {
-    readerRef.current?.cancel().catch(() => {});
-  }, []);
+  const supported = typeof navigator !== 'undefined' && !!navigator.serial;
 
+  // Reopen the board automatically if the user already allowed it before (no picker needed).
   useEffect(() => {
+    const link = getLink();
+    void link.reconnect();
     return () => {
-      readerRef.current?.cancel().catch(() => {});
+      link.dispose();
+      linkRef.current = null;
     };
-  }, []);
+  }, [getLink]);
 
-  return { supported, status, error, reading, connect, disconnect };
+  const connect = useCallback(() => getLink().connect(), [getLink]);
+  const disconnect = useCallback(() => getLink().disconnect(), [getLink]);
+  const send = useCallback((command: string) => getLink().send(command), [getLink]);
+
+  const reading: SensorReading | null = frame ? { entranceCm: frame.entranceCm, spotCm: frame.spotCm } : null;
+
+  return { supported, status, error, reading, frame, stale, config, lastReply, log, stats, connect, disconnect, send };
 }

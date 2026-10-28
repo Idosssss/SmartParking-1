@@ -18,11 +18,11 @@ export default function ActivityFeed({ entries }: { entries: ActivityEntry[] }) 
   return (
     <div className="activity">
       <div className="activity__header">
-        <span className="activity__title">Live Sensor Feed</span>
+        <h2 className="activity__title">Event feed</h2>
         <span className="activity__live-dot" />
       </div>
       <div className="activity__list">
-        {entries.length === 0 && <div className="activity__empty">Waiting for sensor activity…</div>}
+        {entries.length === 0 && <div className="activity__empty">No events yet. Park a car or connect the board.</div>}
         {entries.map((e) => (
           <div className="activity__row" key={e.id}>
             <span className={`activity__dot ${DOT_CLASS[e.kind]}`} />

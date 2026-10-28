@@ -31,7 +31,7 @@ export function headlineCharts(c: Comparison, d: DetailSeries, spots: number): C
 
   out.arrivals = barChart({
     categories: d.hourly.map((h) => h.label),
-    series: [{ name: 'Cars arriving per hour (average day)', color: COLORS.purple, values: d.hourly.map((h) => h.arrivals) }],
+    series: [{ name: 'Cars arriving per hour (average day)', color: COLORS.neutral, values: d.hourly.map((h) => h.arrivals) }],
     yLabel: 'cars per hour',
     yFormat: (v) => v.toFixed(0),
     valueFormat: (v) => v.toFixed(0),
@@ -42,7 +42,7 @@ export function headlineCharts(c: Comparison, d: DetailSeries, spots: number): C
     series: [
       {
         name: 'Share of spots taken (average, band = ±1 SD across days)',
-        color: COLORS.purple,
+        color: COLORS.neutral,
         points: d.occupancy
           .filter((o) => o.minute <= (c.params.hourlyArrivals.length + 1) * 60)
           .map((o) => ({ x: c.params.startHour + o.minute / 60, y: (o.mean / spots) * 100, lo: Math.max(((o.mean - o.sd) / spots) * 100, 0), hi: Math.min(((o.mean + o.sd) / spots) * 100, 100) })),

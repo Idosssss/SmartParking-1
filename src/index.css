@@ -1,14 +1,56 @@
+/* Design tokens. The look is a tinted frame (sidebar + top bar) around one flat white sheet.
+   Colour is kept for data and status: the teal accent marks the thing being measured. */
 :root {
-  --bg: #f5f5f7;
+  --ground: #f2f6f7;
   --surface: #ffffff;
-  --text-primary: #1d1d1f;
-  --text-secondary: #6e6e73;
-  --accent: #007aff;
-  --border: #d2d2d7;
+  --raised: #f6f8f9;
+  --active: #e6ecee;
+  --border: #e2e8ea;
+  --rule: #edf1f2;
+  --control: #c9d0d3;
+  --text: #101213;
+  --muted: #474e51;
+  --accent: #1b6c80;
+  --accent-soft: #e4f0f3;
+  --positive: #1e7b4f;
+  --negative: #c4242a;
+  --warning: #92400e;
+  --primary: #1d1f20;
+
+  --pill-positive-bg: #dcfae5;
+  --pill-positive-ink: #04250e;
+  --pill-negative-bg: #ffedea;
+  --pill-negative-ink: #831c1e;
+  --pill-warning-bg: #fffbeb;
+  --pill-warning-ink: #92400e;
+  --pill-neutral-bg: #e9eef0;
+  --pill-neutral-ink: #2f3538;
+
+  --radius-card: 8px;
+  --radius-control: 6px;
+  --radius-sheet: 16px;
+  --sheet-inset: 8px;
+  --gap: 24px;
+  --pad: 24px;
+  --control-height: 32px;
+  --sidebar-width: 224px;
+  --topbar-height: 48px;
+
+  --font: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+  --fs-title: 22px;
+  --fs-section: 16px;
+  --fs-kpi: 30px;
+  --fs-body: 15px;
+  --fs-small: 13px;
+
+  /* names used by older component styles */
+  --bg: var(--ground);
+  --text-primary: var(--text);
+  --text-secondary: var(--muted);
 
   color-scheme: light;
-  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue',
-    Arial, sans-serif;
+  font-family: var(--font);
 }
 
 * {
@@ -19,18 +61,168 @@ html,
 body {
   margin: 0;
   padding: 0;
+  height: 100%;
 }
 
 body {
-  background: var(--bg);
-  color: var(--text-primary);
-  min-height: 100vh;
+  background: var(--ground);
+  color: var(--text);
+  font-size: var(--fs-body);
+  line-height: 1.5;
+  font-variant-numeric: tabular-nums;
+  -webkit-font-smoothing: antialiased;
 }
 
 #root {
-  min-height: 100vh;
+  height: 100%;
 }
 
-button {
+button,
+input,
+select {
   font-family: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+::selection {
+  background: var(--accent-soft);
+}
+
+/* Shared small controls */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: var(--control-height);
+  padding: 0 12px;
+  border-radius: var(--radius-control);
+  border: 1px solid var(--control);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background-color 0.12s ease, border-color 0.12s ease, transform 0.08s ease;
+}
+
+.btn:hover:not(:disabled) {
+  background: var(--raised);
+  border-color: #aeb7bb;
+}
+
+.btn:active:not(:disabled) {
+  background: var(--active);
+  transform: scale(0.98);
+}
+
+.btn:disabled {
+  color: var(--muted);
+  background: var(--raised);
+  border-color: var(--border);
+  cursor: default;
+}
+
+.btn--primary {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+}
+
+.btn--primary:hover:not(:disabled) {
+  background: #000;
+  border-color: #000;
+}
+
+.btn--primary:disabled {
+  background: #b8bec1;
+  border-color: #b8bec1;
+  color: #fff;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 20px;
+  padding: 0 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  flex: none;
+  background: var(--pill-neutral-bg);
+  color: var(--pill-neutral-ink);
+}
+
+.pill--positive {
+  background: var(--pill-positive-bg);
+  color: var(--pill-positive-ink);
+}
+
+.pill--warning {
+  background: var(--pill-warning-bg);
+  color: var(--pill-warning-ink);
+}
+
+.pill__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+}
+
+.mono {
+  font-family: var(--font-mono);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Pages fade in when you switch to them (the [hidden] wrapper is shown again). */
+.sheet > div:not([hidden]) {
+  animation: page-in 0.24s ease both;
+}
+
+@keyframes page-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* A live connection breathes. */
+.pill--positive .pill__dot {
+  animation: live-ring 1.8s ease-out infinite;
+}
+
+@keyframes live-ring {
+  0% {
+    box-shadow: 0 0 0 0 rgba(30, 123, 79, 0.45);
+  }
+  80%,
+  100% {
+    box-shadow: 0 0 0 6px rgba(30, 123, 79, 0);
+  }
 }

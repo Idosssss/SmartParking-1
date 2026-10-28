@@ -7,21 +7,21 @@ import type { LotGraph } from './graph';
  */
 
 export const COLORS = {
-  base: '#ff9500',
-  app: '#007aff',
-  grid: '#e5e5ea',
-  axis: '#aeaeb2',
-  text: '#1d1d1f',
-  mute: '#6e6e73',
-  green: '#34c759',
-  red: '#ff3b30',
-  purple: '#5856d6',
-  lane: '#ececf0',
-  spotFree: '#d6f5df',
-  spotTaken: '#c7c7cc',
+  base: '#8a9297',
+  app: '#1b6c80',
+  grid: '#e2e8ea',
+  axis: '#aab3b7',
+  text: '#131416',
+  mute: '#5a6164',
+  green: '#1e7b4f',
+  red: '#c4242a',
+  neutral: '#4c5559',
+  lane: '#eef2f4',
+  spotFree: '#dcefe4',
+  spotTaken: '#c5cdd1',
 };
 
-const FONT = `-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif`;
+const FONT = `'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif`;
 
 export function esc(text: string): string {
   return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -285,7 +285,7 @@ export function lotMap(g: LotGraph, o: LotMapOptions = {}): string {
     }
   });
   const ent = lot.entrance;
-  s += `<rect x="${pad + ent.col * cell + 1}" y="${pad + ent.row * cell + 1}" width="${cell - 2}" height="${cell - 2}" rx="5" fill="#d6e8ff" stroke="${COLORS.app}"/>`;
+  s += `<rect x="${pad + ent.col * cell + 1}" y="${pad + ent.row * cell + 1}" width="${cell - 2}" height="${cell - 2}" rx="5" fill="#e4f0f3" stroke="${COLORS.app}"/>`;
   s += `<text x="${cx(ent.col)}" y="${cy(ent.row) + 4}" font-size="10.5" font-weight="700" fill="${COLORS.app}" text-anchor="middle">${o.laneNumbers ? '0 · IN' : 'IN'}</text>`;
 
   g.spots.forEach((sp, i) => {

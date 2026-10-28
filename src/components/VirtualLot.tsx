@@ -5,22 +5,24 @@ const CELL = 56;
 const PAD = 28;
 
 const COLORS = {
-  laneFill: '#eef1f4',
-  laneDash: '#d5dbe1',
+  laneFill: '#eef2f4',
+  laneDash: '#d3dadd',
   spotFree: '#ffffff',
-  spotFreeBorder: '#d2d2d7',
-  spotOccupied: '#eef1f4',
-  spotOccupiedBorder: '#d2d2d7',
-  spotTarget: '#e8f1ff',
-  spotTargetBorder: '#007aff',
-  entranceFill: '#34c759',
-  text: '#6e6e73',
-  car: '#007aff',
-  carWindow: '#bfe0ff',
-  ambientCar: '#af52de',
-  ambientCarWindow: '#e6d3f7',
-  route: '#007aff',
+  spotFreeBorder: '#b3bdc1',
+  spotOccupied: '#eef2f4',
+  spotOccupiedBorder: '#c5cdd1',
+  spotTarget: '#e4f0f3',
+  spotTargetBorder: '#1b6c80',
+  entranceFill: '#1e7b4f',
+  text: '#353c3f',
+  car: '#1b6c80',
+  carWindow: '#c9e1e8',
+  ambientCar: '#8a6a1f',
+  ambientCarWindow: '#eadfc4',
+  route: '#1b6c80',
 };
+
+const FONT = '"IBM Plex Sans", -apple-system, "Segoe UI", sans-serif';
 
 export interface CarVisual {
   row: number;
@@ -120,7 +122,7 @@ function drawHwTag(ctx: CanvasRenderingContext2D, x: number, y: number, active: 
     ctx.lineWidth = 1.5;
     ctx.stroke();
   }
-  ctx.font = '700 9px -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif';
+  ctx.font = `600 9px ${FONT}`;
   ctx.fillStyle = active || lifted ? '#ffffff' : COLORS.route;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
@@ -234,7 +236,7 @@ export default function VirtualLot({
         drawCarShape(ctx, 0.8, COLORS.car, COLORS.carWindow);
         ctx.restore();
       } else {
-        ctx.font = '600 11px -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif';
+        ctx.font = `600 12px ${FONT}`;
         ctx.fillStyle = isTarget ? COLORS.spotTargetBorder : COLORS.text;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
@@ -253,7 +255,7 @@ export default function VirtualLot({
     ctx.fillStyle = COLORS.entranceFill;
     roundRect(ctx, ex + 4, ey + 4, CELL - 8, CELL - 8, 10);
     ctx.fill();
-    ctx.font = '700 9px -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif';
+    ctx.font = `600 9px ${FONT}`;
     ctx.fillStyle = '#ffffff';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
@@ -264,7 +266,7 @@ export default function VirtualLot({
       const pts = path.map(([r, c]) => [cx(c), cy(r)] as const);
 
       ctx.save();
-      ctx.strokeStyle = 'rgba(0, 122, 255, 0.5)';
+      ctx.strokeStyle = 'rgba(27, 108, 128, 0.5)';
       ctx.lineWidth = 7;
       ctx.lineCap = 'round';
       ctx.lineJoin = 'round';
@@ -335,7 +337,7 @@ export default function VirtualLot({
     }
   }, [lot, car, ambientCars, path, progress, targetSpotId, pings, hardwareSpotId, hardwareActive, dragPos, hoverSpot, interactive, width, height]);
 
-  const pointFromEvent = (e: React.MouseEvent<HTMLCanvasElement>) => {
+  const pointFromEvent = (e: React.MouseEvent<HTMLCanvasElement> | React.PointerEvent<HTMLCanvasElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
     return { x: e.clientX - rect.left, y: e.clientY - rect.top };
   };
@@ -350,23 +352,50 @@ export default function VirtualLot({
     return x >= tag.x - slop && x <= tag.x + tag.w + slop && y >= tag.y - slop && y <= tag.y + tag.h + slop;
   };
 
-  const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (!interactive) return;
+  // Dragging the real sensor: grab its tag, or its whole spot and move a few pixels. Pointer events
+  // (with capture) so it works with a mouse, a touch screen or a pen, even if you leave the canvas.
+  const pressRef = useRef<{ x: number; y: number; dragging: boolean } | null>(null);
+
+  const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    if (!interactive || e.button !== 0) return;
     const pt = pointFromEvent(e);
-    if (!isOverHwTag(pt.x, pt.y)) return;
-    e.preventDefault();
-    suppressClickRef.current = true;
-    setDragPos(pt);
+    const overTag = isOverHwTag(pt.x, pt.y);
+    const overHwSpot = cellAt(pt.x, pt.y)?.spotId === hardwareSpotId;
+    if (!overTag && !overHwSpot) return;
+    e.currentTarget.setPointerCapture?.(e.pointerId);
+    pressRef.current = { x: pt.x, y: pt.y, dragging: overTag };
+    if (overTag) {
+      e.preventDefault();
+      suppressClickRef.current = true;
+      setDragPos(pt);
+    }
   };
 
-  const handleMouseUp = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (dragPos) {
+  const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    const pt = pointFromEvent(e);
+    const press = pressRef.current;
+    if (press) {
+      if (!press.dragging && Math.hypot(pt.x - press.x, pt.y - press.y) > 4) {
+        press.dragging = true;
+        suppressClickRef.current = true;
+      }
+      if (press.dragging) setDragPos(pt);
+    }
+    const cell = cellAt(pt.x, pt.y);
+    setHoverSpot(cell?.type === 'spot' ? (cell.spotId ?? null) : null);
+    setHoverTag(interactive && (isOverHwTag(pt.x, pt.y) || cell?.spotId === hardwareSpotId));
+  };
+
+  const finishPress = (e: React.PointerEvent<HTMLCanvasElement>, drop: boolean) => {
+    const press = pressRef.current;
+    pressRef.current = null;
+    if (press?.dragging && drop) {
       const pt = pointFromEvent(e);
       const cell = cellAt(pt.x, pt.y);
       if (cell?.type === 'spot' && cell.spotId) onMoveHardware(cell.spotId);
-      setDragPos(null);
     }
-    // The click that follows a mouse-up must not also toggle the spot underneath.
+    setDragPos(null);
+    // The click that follows the release must not also toggle the spot underneath.
     setTimeout(() => {
       suppressClickRef.current = false;
     }, 0);
@@ -379,18 +408,10 @@ export default function VirtualLot({
     if (cell?.type === 'spot' && cell.spotId) onToggleSpot(cell.spotId);
   };
 
-  const handleMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    const pt = pointFromEvent(e);
-    if (dragPos) setDragPos(pt);
-    const cell = cellAt(pt.x, pt.y);
-    setHoverSpot(cell?.type === 'spot' ? (cell.spotId ?? null) : null);
-    setHoverTag(interactive && isOverHwTag(pt.x, pt.y));
-  };
-
   const handleLeave = () => {
+    if (pressRef.current) return; // still dragging (the pointer is captured)
     setHoverSpot(null);
     setHoverTag(false);
-    setDragPos(null);
   };
 
   const cursor = dragPos ? 'grabbing' : hoverTag ? 'grab' : interactive && hoverSpot ? 'pointer' : 'default';
@@ -399,11 +420,14 @@ export default function VirtualLot({
     <canvas
       ref={canvasRef}
       onClick={handleClick}
-      onMouseDown={handleMouseDown}
-      onMouseUp={handleMouseUp}
-      onMouseMove={handleMove}
-      onMouseLeave={handleLeave}
-      style={{ cursor, display: 'block' }}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={(e) => finishPress(e, true)}
+      onPointerCancel={(e) => finishPress(e, false)}
+      onPointerLeave={handleLeave}
+      role="img"
+      aria-label={`Parking lot map: ${lot.spots.filter((sp) => !sp.occupied).length} of ${lot.spots.length} spots free. The real sensor is on spot ${hardwareSpotId}.`}
+      style={{ cursor, display: 'block', touchAction: 'none' }}
     />
   );
 }

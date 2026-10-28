@@ -1,0 +1,169 @@
+.page-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 20px;
+}
+
+.page-head__title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.page-head h1 {
+  margin: 0;
+  font-size: var(--fs-title);
+  line-height: 28px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.page-head__sub {
+  margin: 4px 0 0;
+  max-width: 640px;
+  font-size: 15px;
+  color: var(--muted);
+}
+
+.switch-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  height: var(--control-height);
+  padding: 0 4px 0 12px;
+  border: 1px solid var(--control);
+  border-radius: var(--radius-control);
+  background: var(--surface);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
+  cursor: pointer;
+  flex: none;
+}
+
+.switch-row:hover {
+  background: var(--raised);
+}
+
+.switch {
+  position: relative;
+  width: 28px;
+  height: 16px;
+  border-radius: 999px;
+  background: #b9c1c5;
+  transition: background-color 0.15s ease;
+  margin-right: 6px;
+}
+
+.switch--on {
+  background: var(--positive);
+}
+
+.switch__knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 0.15s ease;
+}
+
+.switch--on .switch__knob {
+  transform: translateX(12px);
+}
+
+/* One container split by hairlines: no tile, no icon, no sparkline. */
+.kpis {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin-bottom: var(--gap);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+}
+
+.kpi {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 14px 20px 16px;
+  min-width: 0;
+}
+
+.kpi + .kpi {
+  border-left: 1px solid var(--rule);
+}
+
+.kpi__label {
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.kpi__value {
+  font-size: var(--fs-kpi);
+  line-height: 36px;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+
+.kpi__unit {
+  font-size: 14px;
+  color: var(--muted);
+  letter-spacing: 0;
+}
+
+.kpi__unit--small {
+  display: block;
+  margin-top: -6px;
+  font-size: 12px;
+  line-height: 16px;
+}
+
+@media (max-width: 900px) {
+  .page-head {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .kpi:nth-child(3) {
+    border-left: 0;
+  }
+
+  .kpi:nth-child(n + 3) {
+    border-top: 1px solid var(--rule);
+  }
+}
+
+/* A number that just changed ticks into place, so the eye catches it. */
+.kpi__num {
+  display: inline-block;
+  animation: kpi-tick 0.35s ease;
+}
+
+@keyframes kpi-tick {
+  from {
+    opacity: 0.25;
+    transform: translateY(5px);
+    color: var(--accent);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.kpi__state--taken {
+  color: var(--negative);
+}
+
+.kpi__state--open {
+  color: var(--positive);
+}

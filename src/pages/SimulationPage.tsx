@@ -54,13 +54,12 @@ export default function SimulationPage() {
   const charts = useMemo(() => (data ? studyCharts(data.study) : null), [data]);
 
   return (
-    <main className="sim">
+    <div className="sim">
       <header className="sim-hero">
-        <p className="sim-eyebrow">Simulation study</p>
-        <h1>How much driving does the app save?</h1>
+        <h1>Simulation study</h1>
         <p className="sim-lead">
-          We simulated thousands of days in a parking lot twice: once with every driver searching for a spot on their own, and once with every driver routed by the app
-          (Dijkstra's shortest path to the nearest free spot). Same cars, same arrival times, same parking durations. Only the way they find a spot changes.
+          How much driving does the app save? We simulated thousands of days in a lot twice: once with every driver searching on their own, once with every driver routed by the app
+          (Dijkstra's shortest path to the nearest free spot). Same cars, same arrival times, same parking durations; only the way a spot is found changes.
         </p>
         {data && <HeroStats study={data.study} />}
         <div className="sim-hero__links">
@@ -68,11 +67,20 @@ export default function SimulationPage() {
             Download the full PDF report
           </a>
           <a className="sim-btn sim-btn--ghost" href={`${REPO_URL}/tree/main/src/sim`} target="_blank" rel="noreferrer">
-            Read the code on GitHub
+            Source code
           </a>
         </div>
         {error && <p className="sim-error">Could not load the published results ({error}). Run <code>npm run simulate</code> to create them. The walkthrough and live run below still work.</p>}
-        {!data && !error && <p className="sim-muted">Loading published results...</p>}
+        {!data && !error && (
+          <div className="sim-skeleton" aria-label="Loading the published results">
+            {[0, 1, 2, 3].map((i) => (
+              <div key={i}>
+                <i />
+                <b />
+              </div>
+            ))}
+          </div>
+        )}
       </header>
 
       <section className="sim-section">
@@ -87,7 +95,7 @@ export default function SimulationPage() {
       {data && charts && <PublishedResults study={data.study} charts={charts} checks={data.checks} />}
 
       <LivePanel />
-    </main>
+    </div>
   );
 }
 

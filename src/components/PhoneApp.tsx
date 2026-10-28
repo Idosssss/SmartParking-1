@@ -1,4 +1,5 @@
 import type { DirectionStep } from '../lot/directions';
+import Icon from './Icons';
 import './PhoneApp.css';
 
 export type NavStatus = 'idle' | 'detecting' | 'searching' | 'navigating' | 'arrived';
@@ -35,7 +36,10 @@ export default function PhoneApp({
       <div className="phone__notch" />
       <div className="phone__statusbar">
         <span>9:41</span>
-        <span className="phone__statusbar-icons">••• 🔋</span>
+        <span className="phone__statusbar-icons" aria-hidden="true">
+          <i className="phone__bars" />
+          <i className="phone__battery" />
+        </span>
       </div>
 
       <div className="phone__screen">
@@ -48,9 +52,9 @@ export default function PhoneApp({
 
         {status === 'idle' && (
           <div className="phone__panel phone__panel--center">
-            <div className="phone__pin">📍</div>
+            <div className="phone__pin"><Icon name="pin" size={28} /></div>
             {hardwareActive && (
-              <p className="phone__hint">📡 Listening to the entrance sensor. Drive up to the lot entrance.</p>
+              <p className="phone__hint">Listening to the entrance sensor. Drive up to the lot entrance.</p>
             )}
             <button className="phone__button" onClick={onFindSpot} disabled={freeCount === 0}>
               {freeCount === 0 ? 'Lot Full' : 'Simulate Car Arrival'}
@@ -60,8 +64,8 @@ export default function PhoneApp({
 
         {status === 'detecting' && (
           <div className="phone__panel phone__panel--center">
-            <div className="phone__pin phone__pin--pulse">🚗</div>
-            <p className="phone__hint phone__hint--strong phone__hint--pulse">CAR DETECTED</p>
+            <div className="phone__pin phone__pin--pulse"><Icon name="car" size={30} /></div>
+            <p className="phone__hint phone__hint--strong phone__hint--pulse">Car detected</p>
           </div>
         )}
 
@@ -74,9 +78,15 @@ export default function PhoneApp({
 
         {status === 'navigating' && targetSpotId && (
           <div className="phone__panel">
-            {rerouteNotice && <div className="phone__reroute">⚠️ {rerouteNotice}</div>}
+            {rerouteNotice && <div className="phone__reroute">
+                <Icon name="warning" size={14} />
+                {rerouteNotice}
+              </div>}
             {waitingForSensor && (
-              <div className="phone__waiting">📡 Pull into Spot {targetSpotId}. Waiting for the spot sensor to confirm.</div>
+              <div className="phone__waiting">
+                <Icon name="signal" size={14} />
+                Pull into Spot {targetSpotId}. Waiting for the spot sensor to confirm.
+              </div>
             )}
             <div className="phone__target">
               <span className="phone__target-label">Heading to</span>
@@ -106,7 +116,9 @@ export default function PhoneApp({
 
         {status === 'arrived' && targetSpotId && (
           <div className="phone__panel phone__panel--center">
-            <div className="phone__check">✓</div>
+            <div className="phone__check">
+              <Icon name="check" size={26} />
+            </div>
             <p className="phone__hint phone__hint--strong">You've arrived!</p>
             <p className="phone__hint">Parked at Spot {targetSpotId}</p>
             <button className="phone__button" onClick={onReset}>

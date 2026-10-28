@@ -51,18 +51,18 @@ const per1000 = (metersPerCar: number) => ({ km: metersPerCar, hours: (metersPer
 /* ---------------------------------- static diagrams ---------------------------------- */
 
 const architecture = `<svg viewBox="0 0 760 250" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system,Helvetica,Arial,sans-serif" style="width:100%">
-<defs><marker id="ar" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L8 4L0 8z" fill="#007aff"/></marker></defs>
+<defs><marker id="ar" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L8 4L0 8z" fill="#1b6c80"/></marker></defs>
 <g font-size="12" text-anchor="middle">
 <rect x="6" y="14" width="150" height="62" rx="10" fill="#f5f5f7" stroke="#d1d1d6"/><text x="81" y="40" font-weight="700">Entrance IR sensor</text><text x="81" y="58" font-size="10.5" fill="#6e6e73">pin D34 · "car arrived"</text>
 <rect x="6" y="94" width="150" height="62" rx="10" fill="#f5f5f7" stroke="#d1d1d6"/><text x="81" y="120" font-weight="700">Spot IR sensor</text><text x="81" y="138" font-size="10.5" fill="#6e6e73">pin D35 · "spot taken?"</text>
 <rect x="6" y="174" width="150" height="62" rx="10" fill="#f5f5f7" stroke="#d1d1d6"/><text x="81" y="200" font-weight="700">LED strip</text><text x="81" y="218" font-size="10.5" fill="#6e6e73">pin D26 · green / red</text>
 <rect x="204" y="62" width="130" height="126" rx="12" fill="#1d1d1f"/><text x="269" y="118" fill="#fff" font-weight="700" font-size="14">ESP32</text><text x="269" y="138" fill="#aeaeb2" font-size="10.5">reads sensors,</text><text x="269" y="152" fill="#aeaeb2" font-size="10.5">drives the LEDs</text>
-<rect x="382" y="62" width="150" height="126" rx="12" fill="#e8f1ff" stroke="#007aff"/><text x="457" y="100" font-weight="700">Web app</text><text x="457" y="120" font-size="10.5" fill="#1d1d1f">parse → debounce</text><text x="457" y="136" font-size="10.5" fill="#1d1d1f">"car detected"</text><text x="457" y="152" font-size="10.5" fill="#1d1d1f">Dijkstra → nearest</text><text x="457" y="168" font-size="10.5" fill="#1d1d1f">free spot + route</text>
+<rect x="382" y="62" width="150" height="126" rx="12" fill="#e4f0f3" stroke="#1b6c80"/><text x="457" y="100" font-weight="700">Web app</text><text x="457" y="120" font-size="10.5" fill="#1d1d1f">parse → debounce</text><text x="457" y="136" font-size="10.5" fill="#1d1d1f">"car detected"</text><text x="457" y="152" font-size="10.5" fill="#1d1d1f">Dijkstra → nearest</text><text x="457" y="168" font-size="10.5" fill="#1d1d1f">free spot + route</text>
 <rect x="582" y="14" width="170" height="62" rx="10" fill="#f5f5f7" stroke="#d1d1d6"/><text x="667" y="40" font-weight="700">Phone mockup</text><text x="667" y="58" font-size="10.5" fill="#6e6e73">turn-by-turn directions</text>
 <rect x="582" y="94" width="170" height="62" rx="10" fill="#f5f5f7" stroke="#d1d1d6"/><text x="667" y="120" font-weight="700">Virtual lot</text><text x="667" y="138" font-size="10.5" fill="#6e6e73">live map, car + route</text>
 <rect x="582" y="174" width="170" height="62" rx="10" fill="#f5f5f7" stroke="#d1d1d6"/><text x="667" y="200" font-weight="700">Simulation study</text><text x="667" y="218" font-size="10.5" fill="#6e6e73">same lot, same router</text>
 </g>
-<g stroke="#007aff" stroke-width="1.8" fill="none" marker-end="url(#ar)">
+<g stroke="#1b6c80" stroke-width="1.8" fill="none" marker-end="url(#ar)">
 <path d="M158 45 C185 45 180 95 202 100"/><path d="M158 125 H202"/><path d="M202 150 C182 160 182 200 160 205"/>
 <path d="M336 125 H380"/><path d="M534 100 C560 90 560 50 580 48"/><path d="M534 125 H580"/><path d="M534 150 C560 160 560 200 580 205"/></g>
 <text x="358" y="112" font-size="10" fill="#6e6e73" text-anchor="middle">USB</text>
@@ -89,7 +89,7 @@ const t1000Hi = per1000(lotHi.savedMetersPerCar);
 const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Smart Parking Lot - Simulation Study</title>
 <style>
 @page{size:A4;margin:16mm 16mm 18mm;@bottom-left{content:"Smart Parking Lot - Simulation Study";font:8pt -apple-system,Helvetica,Arial,sans-serif;color:#8e8e93}@bottom-right{content:counter(page) " / " counter(pages);font:8pt -apple-system,Helvetica,Arial,sans-serif;color:#8e8e93}}
-:root{--blue:#007aff;--ink:#1d1d1f;--mute:#6e6e73;--line:#e5e5ea;--bg:#f5f5f7}
+:root{--blue:#1b6c80;--ink:#1d1d1f;--mute:#6e6e73;--line:#e5e5ea;--bg:#f5f5f7}
 *{box-sizing:border-box}
 body{margin:0;font:9.8pt/1.5 -apple-system,"SF Pro Text","Helvetica Neue",Arial,sans-serif;color:var(--ink)}
 h1{font-size:25pt;line-height:1.1;margin:0 0 1.5mm;letter-spacing:-.02em}
@@ -102,7 +102,7 @@ li{margin:.8mm 0}
 .title{display:flex;gap:6mm;align-items:center;padding-bottom:4mm;border-bottom:2px solid var(--blue);margin-bottom:5mm}
 .title img{width:24mm;height:24mm}
 .title p{margin:1mm 0 0;color:var(--mute)}
-.num{background:linear-gradient(135deg,#e8f1ff,#f5f9ff);border:1px solid #cfe2ff;border-radius:4mm;padding:5mm 6mm;margin:3mm 0 4mm}
+.num{background:linear-gradient(135deg,#e4f0f3,#f2f8fa);border:1px solid #c3dde4;border-radius:4mm;padding:5mm 6mm;margin:3mm 0 4mm}
 .num .big{font-size:34pt;font-weight:700;color:var(--blue);letter-spacing:-.02em;line-height:1.05}
 .num .small{color:var(--mute);font-size:9pt;margin-top:1.5mm}
 .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:3mm;margin:0 0 4mm}
@@ -182,7 +182,7 @@ route = free spot with the smallest distance, walked back along the cells that s
 ${fig('lotDistances', charts.lotDistances, `Dijkstra's distances (in cells of ${L} m) for one example lot with ${study.example.occupied.length} of ${study.meta.spots} spots taken (grey cars). The outlined spot is the nearest free one.`)}
 ${fig('spotDistances', charts.spotDistances, `Drive from the entrance to every spot of the empty lot, in metres. The nearest spot is ${f(nearestSpotM, 1)} m away, the farthest corner ${f(farthestSpotM, 0)} m.`)}
 </div>
-${fig('lotRoutes', charts.lotRoutes, `One arrival, two routes. This example (${study.example.occupied.length} of ${study.meta.spots} spots taken) was picked because the routes differ; it is an illustration, not the average case, which is ${pc(c.reduction.pct)} shorter. The driver without the app (orange, dashed) looks down the aisle, does not see a free spot close by, and ends up farther in; the app (blue) knows which spot is free and goes straight to the nearest one.`)}
+${fig('lotRoutes', charts.lotRoutes, `One arrival, two routes. This example (${study.example.occupied.length} of ${study.meta.spots} spots taken) was picked because the routes differ; it is an illustration, not the average case, which is ${pc(c.reduction.pct)} shorter. The driver without the app (grey, dashed) looks down the aisle, does not see a free spot close by, and ends up farther in; the app (teal) knows which spot is free and goes straight to the nearest one.`)}
 <h3>Dijkstra and the code that ships in the app</h3>
 <p>In our lot every step from one lane cell to the next costs the same, one cell. When all costs are equal, Dijkstra's algorithm visits cells in the same order as a breadth-first search, and gives the same distances. The router that runs in the live app (<code>src/lot/pathfinding.ts</code>) is that breadth-first search. For the study we wrote a full Dijkstra with a priority queue (<code>src/sim/dijkstra.ts</code>), so it keeps working if edges ever get different costs (a one-way aisle, a speed bump), and we check against the shipped router: in ${checks[0].detail.split(' ')[0]} random lot states, from empty to nearly full, both pick the same spot at the same distance every time.</p>
 <h3>Driver without the app</h3>

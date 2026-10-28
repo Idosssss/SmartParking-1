@@ -107,9 +107,9 @@ export default function Walkthrough() {
         <div className="sim-tabs" role="tablist">
           {(
             [
-              ['none', '1  Without the app'],
-              ['app', '2  With the app (Dijkstra)'],
-              ['both', '3  Compare'],
+              ['none', 'Without the app'],
+              ['app', 'With the app (Dijkstra)'],
+              ['both', 'Compare'],
             ] as [Tab, string][]
           ).map(([id, label]) => (
             <button key={id} role="tab" aria-selected={tab === id} className={tab === id ? 'is-on' : ''} onClick={() => reset({ tab: id })}>
@@ -149,7 +149,7 @@ export default function Walkthrough() {
           <dl className="sim-walk__facts">
             <div>
               <dt>Without the app</dt>
-              <dd style={{ color: COLORS.base }}>{(ex.explorerCells * L).toFixed(1)} m</dd>
+              <dd style={{ color: COLORS.mute }}>{(ex.explorerCells * L).toFixed(1)} m</dd>
             </div>
             <div>
               <dt>With the app</dt>
