@@ -14,7 +14,7 @@ interface Published {
 }
 
 const pct = (v: number, digits = 1) => `${(v * 100).toFixed(digits)}%`;
-const REPO_URL = 'https://github.com/AvivEli1/SmartParking';
+const REPO_URL = 'https://github.com/Idosssss/SmartParking-1';
 
 /** An SVG chart that draws itself in (lines trace, bars grow) the first time it scrolls into view. */
 function Chart({ svg }: { svg: string }) {

@@ -340,7 +340,7 @@ ${table(
 <li>Model the entrance queue, which a full-lot warning from the app would also shorten.</li>
 </ul>
 <h2 style="margin-top:6mm">10. Reproducing every number</h2>
-<pre>git clone https://github.com/AvivEli1/SmartParking.git
+<pre>git clone https://github.com/Idosssss/SmartParking-1.git
 cd SmartParking &amp;&amp; npm install
 npm run simulate           # self-checks, then the full study (seed ${study.meta.seed}); about a minute or two
 npm run simulate:report    # rebuilds this PDF from the results file</pre>

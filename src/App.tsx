@@ -1,4 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
+import DemoSettingsMenu from './components/DemoSettingsMenu';
+import EdgeCasePanel from './components/EdgeCasePanel';
+import type { ScenarioId } from './components/scenarios';
+import { speak, stopSpeaking } from './components/speech';
 import './App.css';
 import VirtualLot, { type CarVisual, type PingVisual } from './components/VirtualLot';
 import PhoneApp, { type NavStatus } from './components/PhoneApp';
@@ -12,20 +16,21 @@ import { useToasts } from './components/useToasts';
 import HardwarePanel from './components/HardwarePanel';
 import { useHardware } from './hardware/useHardware';
 import { generateLot } from './lot/generateLot';
-import { findNearestFreeSpot, buildRouteToSpot, type RouteResult } from './lot/pathfinding';
+import { findNearestFreeSpot, buildRouteToSpot, reachableSpotIds, withLaneClosed, type RouteResult } from './lot/pathfinding';
 import { buildDirections } from './lot/directions';
 import type { GridPoint, LotModel, Spot } from './lot/types';
+import { DEFAULT_HARDWARE_SPOT_ID, DETECT_MS, PING_MS, SEARCH_MS, SENSOR_FAR_CM } from './config/constants';
 import {
-  AMBIENT_MS_PER_CELL,
-  AMBIENT_SPAWN_MS,
-  DEFAULT_HARDWARE_SPOT_ID,
-  DETECT_MS,
-  MAX_AMBIENT_CARS,
-  MS_PER_CELL,
-  PING_MS,
-  REROUTE_STEAL_CHANCE,
-  SEARCH_MS,
-} from './config/constants';
+  ambientMsPerCell,
+  DEFAULT_DEMO_SETTINGS,
+  MAX_QUEUE,
+  msPerCell,
+  SPOT_STEALING,
+  TRAFFIC_LEVELS,
+  type DemoSettings,
+} from './config/demoSettings';
+import { loadDemoSettings, saveDemoSettings } from './config/storedSettings';
+import { DEFAULT_PARAMS } from './sim/params';
 import { ignoreShortcut } from './shortcuts';
 
 interface AmbientCar {
@@ -33,6 +38,8 @@ interface AmbientCar {
   path: GridPoint[];
   spotId: string;
   startTime: number;
+  /** Each car keeps the speed it started with, so changing the setting never makes it jump. */
+  msPerCell: number;
 }
 
 function angleFor(dr: number, dc: number): number {
@@ -63,6 +70,19 @@ function carVisualFromPath(path: GridPoint[], t: number): CarVisual {
   };
 }
 
+/** A readable name for one lane cell of the demo lot, for the activity feed. */
+function laneName(row: number, col: number): string {
+  if (col === 0) return `the main lane at row ${row + 1}`;
+  const aisle = row === 1 ? 'the top aisle' : row === 5 ? 'the bottom aisle' : 'the entrance road';
+  return `${aisle} at column ${col + 1}`;
+}
+
+const NO_SPOTS = new Set<string>();
+
+function unreachableIds(lot: LotModel, reachable: Set<string>): Set<string> {
+  return new Set(lot.spots.filter((s) => !reachable.has(s.id)).map((s) => s.id));
+}
+
 function timeNow() {
   return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 }
@@ -87,6 +107,11 @@ function App({ active = true }: { active?: boolean }) {
   // False while the real sensor is waiting to be moved/cleared after a car parked in its spot.
   const [hwArmed, setHwArmed] = useState(true);
   const hwControls = hw.active && hwArmed;
+  const [settings, setSettings] = useState<DemoSettings>(loadDemoSettings);
+  // Cars waiting at the gate: another car is being guided, or no free spot can be reached yet.
+  const [queue, setQueue] = useState(0);
+  const [lastScenario, setLastScenario] = useState<ScenarioId | null>(null);
+  const cellMs = msPerCell(settings);
 
   const hwActiveRef = useRef(hw.active);
   const hardwareSpotIdRef = useRef(hardwareSpotId);
@@ -103,6 +128,13 @@ function App({ active = true }: { active?: boolean }) {
   const ambientCarsRef = useRef(ambientCars);
   const pingsRef = useRef(pings);
   const idCounter = useRef(0);
+  const settingsRef = useRef(settings);
+  const queueRef = useRef(queue);
+  // Set by the "Someone takes your spot" scenario: the next route gets a rival car.
+  const stealNextRef = useRef(false);
+  const scenarioTimers = useRef<number[]>([]);
+  // Set by the "Noisy sensor reading" scenario: did the entrance report a car during the spike?
+  const glitchWatch = useRef<{ until: number; triggered: boolean } | null>(null);
 
   useEffect(() => {
     lotRef.current = lot;
@@ -131,6 +163,13 @@ function App({ active = true }: { active?: boolean }) {
     hwControlsRef.current = hwControls;
   }, [hw.active, hw.spotOccupied, hardwareSpotId, preferRealSpot, hwArmed, hwControls]);
 
+  useEffect(() => {
+    settingsRef.current = settings;
+  }, [settings]);
+  useEffect(() => {
+    queueRef.current = queue;
+  }, [queue]);
+
   const nextId = (prefix: string) => `${prefix}${idCounter.current++}`;
 
   const logActivity = (text: string, kind: ActivityEntry['kind']) => {
@@ -144,6 +183,8 @@ function App({ active = true }: { active?: boolean }) {
   };
 
   const freeCount = lot.spots.filter((s) => !s.occupied).length;
+  const reachable = reachableSpotIds(lot);
+  const reachableFree = lot.spots.filter((s) => !s.occupied && reachable.has(s.id)).length;
   // The lot can be edited between trips, including while the phone still shows "You've arrived".
   const interactive = userStatus === 'idle' || userStatus === 'arrived';
 
@@ -163,6 +204,22 @@ function App({ active = true }: { active?: boolean }) {
     }));
     addPing(spot.row, spot.col);
     logActivity(`Spot ${id} sensor → ${willBeOccupied ? 'OCCUPIED' : 'FREE'}`, 'info');
+  };
+
+  // Roadwork: click a lane to close it, click again to reopen it.
+  const toggleLane = (row: number, col: number) => {
+    if (!interactive) return;
+    const cell = lot.cells[row]?.[col];
+    if (cell?.type !== 'lane') return;
+    const closing = !cell.closed;
+    setLot((prev) => withLaneClosed(prev, row, col, closing));
+    if (closing) {
+      // Simulated cars that still have to pass the barrier turn back instead of driving through it.
+      const now = performance.now();
+      const ahead = (c: AmbientCar) => c.path.slice(Math.floor((now - c.startTime) / c.msPerCell)).some(([r, cc]) => r === row && cc === col);
+      setAmbientCars((prev) => (prev.some(ahead) ? prev.filter((c) => !ahead(c)) : prev));
+    }
+    logActivity(closing ? `Roadwork: ${laneName(row, col)} is closed` : `${laneName(row, col)} is open again`.replace(/^t/, 'T'), closing ? 'warning' : 'success');
   };
 
   // Drag the HW tag onto another spot to choose which spot the real sensor controls.
@@ -188,15 +245,183 @@ function App({ active = true }: { active?: boolean }) {
     setRerouteNotice(null);
   };
 
-  const handleFindSpot = (fromHardware = false) => {
-    // A real car showing up clears the previous "You've arrived" screen by itself.
-    if (fromHardware && userStatus === 'arrived') handleReset();
-    else if (userStatus !== 'idle') return;
-    if (freeCount === 0) {
-      if (fromHardware) {
-        logActivity('Car at the entrance but the lot is full', 'warning');
-        notify('A car is at the entrance, but the lot is full.', 'warning');
+  const updateSettings = (patch: Partial<DemoSettings>) => {
+    const next = { ...settingsRef.current, ...patch };
+    // A new speed keeps the car where it is: rescale the time it has been driving.
+    const oldMs = msPerCell(settingsRef.current);
+    const newMs = msPerCell(next);
+    if (newMs !== oldMs && userRouteStartRef.current !== null) {
+      const now = performance.now();
+      const rebased = now - (now - userRouteStartRef.current) * (newMs / oldMs);
+      userRouteStartRef.current = rebased;
+      setUserRouteStart(rebased);
+    }
+    if (!next.voice) stopSpeaking();
+    settingsRef.current = next;
+    setSettings(next);
+    saveDemoSettings(next);
+  };
+
+  const clearScenarioTimers = () => {
+    scenarioTimers.current.forEach((t) => clearTimeout(t));
+    scenarioTimers.current = [];
+    glitchWatch.current = null;
+    stealNextRef.current = false;
+  };
+  useEffect(() => clearScenarioTimers, []);
+
+  const later = (ms: number, run: () => void) => {
+    scenarioTimers.current.push(window.setTimeout(run, ms));
+  };
+
+  /**
+   * Starts from a clean lot: no trip, no simulated cars, nobody waiting, every lane open, and exactly
+   * the given spots taken. The emulator is switched off; a connected board keeps driving its spot.
+   */
+  const prepareLot = (taken: (id: string) => boolean, closed: [number, number][] = []) => {
+    clearScenarioTimers();
+    handleReset();
+    stopSpeaking();
+    ambientCarsRef.current = [];
+    setAmbientCars([]);
+    queueRef.current = 0;
+    setQueue(0);
+    // The emulator would steer cars to its spot and spoil the set-up; a real board keeps its spot.
+    if (hw.source === 'emulator') hw.emulator.setOn(false);
+    const keep = hw.source === 'serial' ? hardwareSpotId : null;
+    realParkedRef.current = new Set([...realParkedRef.current].filter((id) => id === keep));
+    setLot((prev) => {
+      let next: LotModel = {
+        ...prev,
+        cells: prev.cells.map((r) => r.map((c) => (c.closed ? { ...c, closed: false } : c))),
+        spots: prev.spots.map((s) => (s.id === keep ? s : { ...s, occupied: taken(s.id) })),
+      };
+      for (const [r, c] of closed) next = withLaneClosed(next, r, c, true);
+      return next;
+    });
+  };
+
+  const sendCarIn = () => {
+    setUserStatus('detecting');
+    logActivity('Entrance sensor triggered — car detected', 'info');
+  };
+
+  const queueCars = (n: number, reason: string) => {
+    queueRef.current = n;
+    setQueue(n);
+    logActivity(reason, 'warning');
+  };
+
+  const resetLot = () => {
+    prepareLot(() => false);
+    setLiveTraffic(false);
+    setLastScenario(null);
+    logActivity('Lot emptied: every spot free and every lane open', 'info');
+  };
+
+  const spotNumber = (id: string) => Number(id.slice(1));
+
+  const runScenario = (id: ScenarioId) => {
+    setLastScenario(id);
+    switch (id) {
+      case 'one-left':
+        prepareLot((s) => s !== 'S8');
+        setLiveTraffic(false);
+        sendCarIn();
+        break;
+      case 'stolen':
+        prepareLot((s) => s === 'S25' || s === 'S26');
+        setLiveTraffic(false);
+        stealNextRef.current = true;
+        sendCarIn();
+        break;
+      case 'full':
+        prepareLot(() => true);
+        setLiveTraffic(false);
+        queueCars(1, 'Car at the entrance but the lot is full. It waits at the gate for a spot to free up.');
+        later(4000, () => {
+          setLot((prev) => ({ ...prev, spots: prev.spots.map((s) => (s.id === 'S28' ? { ...s, occupied: false } : s)) }));
+          const spot = lotRef.current.spots.find((s) => s.id === 'S28');
+          if (spot) addPing(spot.row, spot.col);
+          logActivity('A driver leaves Spot S28', 'ambient');
+        });
+        break;
+      case 'roadwork':
+        prepareLot((s) => s !== 'S14' && s !== 'S22', [[5, 3]]);
+        setLiveTraffic(false);
+        logActivity(`Roadwork: ${laneName(5, 3)} is closed`, 'warning');
+        sendCarIn();
+        break;
+      case 'no-way-in':
+        prepareLot((s) => spotNumber(s) >= 17, [[3, 0]]);
+        setLiveTraffic(false);
+        logActivity(`Roadwork: ${laneName(3, 0)} is closed`, 'warning');
+        queueCars(1, 'Car at the entrance, but every way to the free spots is closed. It waits at the gate.');
+        break;
+      case 'line':
+        prepareLot(() => false);
+        setLiveTraffic(false);
+        queueCars(2, 'Three cars arrive together. Two wait at the gate.');
+        sendCarIn();
+        break;
+      case 'rush':
+        prepareLot((s) => spotNumber(s) % 3 !== 0);
+        updateSettings({ traffic: 'busy' });
+        setLiveTraffic(true);
+        sendCarIn();
+        break;
+      case 'glitch': {
+        prepareLot(() => false);
+        setLiveTraffic(false);
+        hw.emulator.setEntranceCm(SENSOR_FAR_CM);
+        hw.emulator.setOn(true);
+        // Give the emulator a moment to stream "nothing there", then one short spike.
+        later(900, () => {
+          glitchWatch.current = { until: performance.now() + 1500, triggered: false };
+          hw.emulator.setEntranceCm(5);
+          later(140, () => hw.emulator.setEntranceCm(SENSOR_FAR_CM));
+        });
+        later(2500, () => {
+          const watch = glitchWatch.current;
+          glitchWatch.current = null;
+          if (watch?.triggered) logActivity('The one close reading was reported as a car', 'warning');
+          else logActivity('The entrance sensor read 5 cm for a moment. One reading is not a car (it takes 3 in a row), so nothing happened.', 'success');
+        });
+        break;
       }
+    }
+  };
+
+  const scenarioBlocked = (id: ScenarioId): string | null =>
+    id === 'glitch' && hw.serial.status === 'connected' ? 'Uses the emulator. Disconnect the board first.' : null;
+
+  // A car that cannot be guided yet waits in line at the gate, up to MAX_QUEUE cars.
+  const joinQueue = (reason: string) => {
+    if (queueRef.current >= MAX_QUEUE) {
+      logActivity(`The line at the gate is full (${MAX_QUEUE} cars). One more car was turned away.`, 'warning');
+      notify(`The line at the gate is full (${MAX_QUEUE} cars).`, 'warning');
+      return;
+    }
+    queueRef.current += 1;
+    setQueue(queueRef.current);
+    logActivity(reason, 'warning');
+    notify(reason, 'info');
+  };
+
+  const handleFindSpot = (fromHardware = false) => {
+    const busy = userStatus === 'detecting' || userStatus === 'searching' || userStatus === 'navigating';
+    if (busy || queueRef.current > 0) {
+      joinQueue('Another car is at the entrance. It waits until the car ahead has been guided.');
+      return;
+    }
+    // A new car clears the previous "You've arrived" screen by itself.
+    if (userStatus === 'arrived') handleReset();
+    if (reachableFree === 0) {
+      joinQueue(
+        freeCount === 0
+          ? 'Car at the entrance but the lot is full. It waits at the gate for a spot to free up.'
+          : 'Car at the entrance, but every way to the free spots is closed. It waits at the gate.',
+      );
       return;
     }
     setUserStatus('detecting');
@@ -206,10 +431,12 @@ function App({ active = true }: { active?: boolean }) {
     );
   };
 
-  // F sends a car in, T toggles live traffic. The ref always holds this render's handler.
+  // F sends a car in, T toggles live traffic, E empties the lot. The ref always holds this render's handler.
   const findSpotRef = useRef(handleFindSpot);
+  const resetLotRef = useRef(resetLot);
   useEffect(() => {
     findSpotRef.current = handleFindSpot;
+    resetLotRef.current = resetLot;
   });
   useEffect(() => {
     if (!active) return;
@@ -217,6 +444,7 @@ function App({ active = true }: { active?: boolean }) {
       if (ignoreShortcut(e)) return;
       if (e.key === 'f' || e.key === 'F') findSpotRef.current();
       else if (e.key === 't' || e.key === 'T') setLiveTraffic((on) => !on);
+      else if (e.key === 'e' || e.key === 'E') resetLotRef.current();
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
@@ -302,6 +530,13 @@ function App({ active = true }: { active?: boolean }) {
       entranceWasDetected.current = false;
       return;
     }
+    const glitch = glitchWatch.current;
+    if (hw.entranceDetected && glitch && performance.now() < glitch.until) {
+      // The spike was believed: say so honestly, and do not send a car for it.
+      glitch.triggered = true;
+      entranceWasDetected.current = true;
+      return;
+    }
     if (hw.entranceDetected && !entranceWasDetected.current) handleFindSpot(true);
     entranceWasDetected.current = hw.entranceDetected;
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -349,6 +584,23 @@ function App({ active = true }: { active?: boolean }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hw.device.mock]);
 
+  // The next car in line drives in once the car ahead has been guided and a spot can be reached.
+  useEffect(() => {
+    if (queue === 0 || reachableFree === 0 || (userStatus !== 'idle' && userStatus !== 'arrived')) return;
+    const id = setTimeout(
+      () => {
+        queueRef.current = Math.max(0, queueRef.current - 1);
+        setQueue(queueRef.current);
+        handleReset();
+        setUserStatus('detecting');
+        logActivity(`The next car in line drives in${queueRef.current ? ` (${queueRef.current} still waiting)` : ''}`, 'info');
+      },
+      userStatus === 'arrived' ? 1800 : 700,
+    );
+    return () => clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [queue, reachableFree, userStatus]);
+
   // Stage 1: "CAR DETECTED"
   useEffect(() => {
     if (userStatus !== 'detecting') return;
@@ -371,8 +623,13 @@ function App({ active = true }: { active?: boolean }) {
       const toRealSpot = realSpot && !realSpot.occupied ? buildRouteToSpot(currentLot, entrance, realSpot) : null;
       const result = toRealSpot ?? findNearestFreeSpot(currentLot, entrance);
       if (!result) {
+        // The last spot went while the car was being detected: it goes back in line at the gate.
         setUserStatus('idle');
-        logActivity('No spots available', 'warning');
+        joinQueue(
+          currentLot.spots.some((s) => !s.occupied)
+            ? 'No free spot can be reached: roadwork closes the way. The car waits at the gate.'
+            : 'The lot filled up before the car could be guided. It waits at the gate.',
+        );
         return;
       }
       const startTime = performance.now();
@@ -381,39 +638,56 @@ function App({ active = true }: { active?: boolean }) {
       setUserStatus('navigating');
       setClock(startTime);
       logActivity(`Routing you to Spot ${result.spot.id}`, 'success');
+      // The "Someone takes your spot" scenario: a faster car now races you to it.
+      const rivalAllowed = !(hwControlsRef.current && result.spot.id === hardwareSpotIdRef.current);
+      if (stealNextRef.current && rivalAllowed) {
+        stealNextRef.current = false;
+        const rival = buildRouteToSpot(currentLot, entrance, result.spot);
+        if (rival) spawnAmbient(result.spot, rival.path);
+      }
     }, SEARCH_MS);
     return () => clearTimeout(id);
+    // joinQueue and spawnAmbient only use refs and state setters, so this render's copies are fine.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userStatus]);
 
+  const spawnAmbient = (target: Spot, path: GridPoint[]) => {
+    const startTime = performance.now();
+    const car: AmbientCar = { id: nextId('amb'), path, spotId: target.id, startTime, msPerCell: ambientMsPerCell(settingsRef.current) };
+    ambientCarsRef.current = [...ambientCarsRef.current, car];
+    setAmbientCars((prev) => [...prev, car]);
+    setClock(startTime);
+    logActivity(`Another car is heading to Spot ${target.id}`, 'ambient');
+  };
+
   // Ambient traffic spawner
+  const traffic = TRAFFIC_LEVELS[settings.traffic];
   useEffect(() => {
     if (!liveTraffic) return;
     const id = setInterval(() => {
       const currentLot = lotRef.current;
+      // Cars cannot drive to, or out of, spots behind a closed lane.
+      const reach = reachableSpotIds(currentLot);
       // The hardware spot belongs to the real sensor, so simulated traffic leaves it alone.
-      const simulated = currentLot.spots.filter((s) => !(hwActiveRef.current && s.id === hardwareSpotIdRef.current));
+      const simulated = currentLot.spots.filter((s) => reach.has(s.id) && !(hwActiveRef.current && s.id === hardwareSpotIdRef.current));
       const free = simulated.filter((s) => !s.occupied);
       const occupied = simulated.filter((s) => s.occupied);
       const leavers = occupied.filter((s) => !realParkedRef.current.has(s.id));
       const occupancy = currentLot.spots.length === 0 ? 0 : occupied.length / currentLot.spots.length;
       const arrivalProb = Math.max(0.15, Math.min(0.85, 0.75 - occupancy * 0.5));
 
-      if (Math.random() < arrivalProb && free.length > 0 && ambientCarsRef.current.length < MAX_AMBIENT_CARS) {
+      if (Math.random() < arrivalProb && free.length > 0 && ambientCarsRef.current.length < traffic.maxCars) {
         let target: Spot | undefined;
         const activeUserRoute = userRouteRef.current;
-        if (userStatusRef.current === 'navigating' && activeUserRoute && Math.random() < REROUTE_STEAL_CHANCE) {
+        const stealChance = SPOT_STEALING[settingsRef.current.stealing].chance;
+        if (userStatusRef.current === 'navigating' && activeUserRoute && Math.random() < stealChance) {
           target = free.find((s) => s.id === activeUserRoute.spot.id);
         }
         if (!target) target = free[Math.floor(Math.random() * free.length)];
 
         const start: GridPoint = [currentLot.entrance.row, currentLot.entrance.col];
         const route = buildRouteToSpot(currentLot, start, target);
-        if (route) {
-          const startTime = performance.now();
-          setAmbientCars((prev) => [...prev, { id: nextId('amb'), path: route.path, spotId: target!.id, startTime }]);
-          setClock(startTime);
-          logActivity(`Another car is heading to Spot ${target.id}`, 'ambient');
-        }
+        if (route) spawnAmbient(target, route.path);
       } else if (leavers.length > 0) {
         const spot = leavers[Math.floor(Math.random() * leavers.length)];
         setLot((prev) => ({
@@ -423,10 +697,10 @@ function App({ active = true }: { active?: boolean }) {
         addPing(spot.row, spot.col);
         logActivity(`Spot ${spot.id} just freed up`, 'ambient');
       }
-    }, AMBIENT_SPAWN_MS);
+    }, traffic.spawnMs);
     return () => clearInterval(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [liveTraffic]);
+  }, [liveTraffic, traffic]);
 
   // Master animation loop — drives the user's car, ambient traffic, and ping ripples.
   useEffect(() => {
@@ -440,7 +714,8 @@ function App({ active = true }: { active?: boolean }) {
       if (userStatusRef.current === 'navigating' && userRouteRef.current && userRouteStartRef.current !== null) {
         const route = userRouteRef.current;
         const maxT = route.path.length - 1;
-        const t = Math.min((now - userRouteStartRef.current) / MS_PER_CELL, maxT);
+        const userMs = msPerCell(settingsRef.current);
+        const t = Math.min((now - userRouteStartRef.current) / userMs, maxT);
         const targetSpot = lotRef.current.spots.find((s) => s.id === route.spot.id);
         // Heading for the real spot: the car waits at its entrance until the D35 sensor sees a car park there.
         const waitsForSensor = hwControlsRef.current && route.spot.id === hardwareSpotIdRef.current;
@@ -473,7 +748,7 @@ function App({ active = true }: { active?: boolean }) {
           const spotId = route.spot.id;
           if (sensorConfirmedParked) {
             // Snap the virtual car into the spot the moment the real sensor sees the real car.
-            const snapStart = now - maxT * MS_PER_CELL;
+            const snapStart = now - maxT * userMs;
             userRouteStartRef.current = snapStart;
             setUserRouteStart(snapStart);
           }
@@ -511,7 +786,7 @@ function App({ active = true }: { active?: boolean }) {
         const remaining: AmbientCar[] = [];
         for (const c of ambientCarsRef.current) {
           const maxT = c.path.length - 1;
-          const t = Math.min((now - c.startTime) / AMBIENT_MS_PER_CELL, maxT);
+          const t = Math.min((now - c.startTime) / c.msPerCell, maxT);
           if (t >= maxT) arrived.push(c.spotId);
           else remaining.push(c);
         }
@@ -560,26 +835,40 @@ function App({ active = true }: { active?: boolean }) {
   const maxUserT = userRoute ? userRoute.path.length - 1 : 0;
   const userT =
     userRoute && userRouteStart !== null
-      ? Math.max(0, Math.min((clock - userRouteStart) / MS_PER_CELL, holdingForSensor ? maxUserT - 1 : maxUserT))
+      ? Math.max(0, Math.min((clock - userRouteStart) / cellMs, holdingForSensor ? maxUserT - 1 : maxUserT))
       : 0;
   const waitingForSensor = holdingForSensor && userT >= maxUserT - 1 - 0.001;
 
   const steps = userRoute ? buildDirections(userRoute.path, userRoute.spot.id) : [];
   let currentStepIndex = 0;
   if (userRoute) {
-    const idx = Math.min(Math.round(userT), userRoute.path.length - 1);
     for (let i = 0; i < steps.length; i++) {
-      if (steps[i].fromIndex <= idx) currentStepIndex = i;
+      if (steps[i].fromIndex <= userT + 1e-6) currentStepIndex = i;
       else break;
     }
   }
+
+  // Spoken directions: each step is read once, when the car reaches it (a reroute starts a new list).
+  const spokenRef = useRef<{ route: RouteResult | null; step: number }>({ route: null, step: -1 });
+  const stepToSay = (userStatus === 'navigating' || userStatus === 'arrived') && userRoute ? steps[currentStepIndex]?.text : undefined;
+  useEffect(() => {
+    const said = spokenRef.current;
+    if (!settings.voice || !stepToSay || (said.route === userRoute && said.step === currentStepIndex)) return;
+    spokenRef.current = { route: userRoute, step: currentStepIndex };
+    speak(stepToSay);
+  }, [settings.voice, stepToSay, userRoute, currentStepIndex]);
+
+  // What is left of the drive, for the phone: metres and seconds.
+  const remainingCells = userRoute && userStatus === 'navigating' ? Math.max(0, maxUserT - userT) : 0;
+  const remainingMeters = Math.round(remainingCells * DEFAULT_PARAMS.cellMeters);
+  const remainingSeconds = Math.ceil((remainingCells * cellMs) / 1000);
 
   const showRoute = userStatus === 'navigating' || userStatus === 'arrived';
   const carVisual: CarVisual | null = userRoute && showRoute ? carVisualFromPath(userRoute.path, userT) : null;
 
   const ambientVisuals: CarVisual[] = ambientCars.map((c) => {
     const maxT = c.path.length - 1;
-    const t = Math.min((clock - c.startTime) / AMBIENT_MS_PER_CELL, maxT);
+    const t = Math.min((clock - c.startTime) / c.msPerCell, maxT);
     return carVisualFromPath(c.path, t);
   });
 
@@ -605,7 +894,15 @@ function App({ active = true }: { active?: boolean }) {
         realSpotId={hardwareSpotId}
         hardwareActive={hw.active}
         realSpotState={realSpotState}
-      />
+        cutOff={freeCount - reachableFree}
+      >
+        <DemoSettingsMenu
+          settings={settings}
+          onChange={updateSettings}
+          onRestoreDefaults={() => updateSettings(DEFAULT_DEMO_SETTINGS)}
+          onResetLot={resetLot}
+        />
+      </LotHeader>
 
       <div className="live__grid">
         <section className="live__phone" aria-label="Driver app">
@@ -616,7 +913,11 @@ function App({ active = true }: { active?: boolean }) {
               steps={steps}
               currentStepIndex={currentStepIndex}
               freeCount={freeCount}
+              reachableFree={reachableFree}
               totalCount={lot.spots.length}
+              queue={queue}
+              remainingMeters={remainingMeters}
+              remainingSeconds={remainingSeconds}
               rerouteNotice={rerouteNotice}
               hardwareActive={hw.active}
               waitingForSensor={waitingForSensor}
@@ -641,6 +942,8 @@ function App({ active = true }: { active?: boolean }) {
               onMoveHardware={moveHardwareSpot}
               interactive={interactive}
               onToggleSpot={toggleSpot}
+              unreachable={reachable.size === lot.spots.length ? NO_SPOTS : unreachableIds(lot, reachable)}
+              onToggleLane={toggleLane}
             />
           </div>
           <div className="legend">
@@ -659,8 +962,8 @@ function App({ active = true }: { active?: boolean }) {
           </div>
           <p className="live__hint">
             {interactive
-              ? "Click any spot to simulate its sensor. Drag the HW tag to choose the real sensor's spot."
-              : 'Spots are locked while a car is on its way to a spot.'}
+              ? "Click a spot to simulate its sensor, or a lane to close it for roadwork. Drag the HW tag to choose the real sensor's spot."
+              : 'The lot is locked while a car is on its way to a spot.'}
           </p>
           <ActivityFeed entries={activity} />
         </section>
@@ -678,6 +981,8 @@ function App({ active = true }: { active?: boolean }) {
           />
         </section>
       </div>
+
+      <EdgeCasePanel onRun={runScenario} blockedReason={scenarioBlocked} lastRun={lastScenario} boardConnected={boardConnected} />
 
       <div className="live__row">
         <SessionPanel stats={session} occupied={lot.spots.length - freeCount} total={lot.spots.length} activity={activity} />

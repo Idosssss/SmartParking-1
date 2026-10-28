@@ -3,7 +3,7 @@ import type { Hardware } from '../hardware/useHardware';
 import Icon from './Icons';
 import './ReliabilityPanel.css';
 
-const DOCS = 'https://github.com/AvivEli1/SmartParking/blob/main/docs/EDGE_CASES.md';
+const DOCS = 'https://github.com/Idosssss/SmartParking-1/blob/main/docs/EDGE_CASES.md';
 
 type Tone = 'ok' | 'warn' | 'bad' | 'idle';
 

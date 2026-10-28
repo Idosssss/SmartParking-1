@@ -25,6 +25,9 @@ const LIGHT = {
   routeDash: 'rgba(27, 108, 128, 0.5)',
   onRoute: '#ffffff',
   tagBg: '#ffffff',
+  closedFill: '#fdf1d8',
+  closedStripe: '#c9821c',
+  closedInk: '#7a4a0c',
 };
 
 type Palette = typeof LIGHT;
@@ -49,6 +52,9 @@ const DARK: Palette = {
   routeDash: 'rgba(92, 188, 209, 0.55)',
   onRoute: '#06181d',
   tagBg: '#141a1d',
+  closedFill: '#2a2110',
+  closedStripe: '#b97d24',
+  closedInk: '#f6cd7d',
 };
 
 const FONT = '"Plus Jakarta Sans Variable", -apple-system, "Segoe UI", sans-serif';
@@ -78,6 +84,10 @@ interface VirtualLotProps {
   onMoveHardware: (spotId: string) => void;
   interactive: boolean;
   onToggleSpot: (spotId: string) => void;
+  /** Spots no car can reach right now (a closed lane cuts them off). */
+  unreachable: Set<string>;
+  /** Click a lane to close it for roadwork, click again to reopen it. */
+  onToggleLane: (row: number, col: number) => void;
 }
 
 function roundRect(
@@ -172,9 +182,12 @@ export default function VirtualLot({
   onMoveHardware,
   interactive,
   onToggleSpot,
+  unreachable,
+  onToggleLane,
 }: VirtualLotProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [hoverSpot, setHoverSpot] = useState<string | null>(null);
+  const [hoverLane, setHoverLane] = useState<string | null>(null);
   const [hoverTag, setHoverTag] = useState(false);
   const [dragPos, setDragPos] = useState<{ x: number; y: number } | null>(null);
   const suppressClickRef = useRef(false);
@@ -229,12 +242,57 @@ export default function VirtualLot({
     }
     ctx.setLineDash([]);
 
+    // Lanes closed for roadwork: amber stripes over the road, drawn after the centre lines so they cover them.
+    for (const row of lot.cells) {
+      for (const cell of row) {
+        const x = PAD + cell.col * CELL;
+        const y = PAD + cell.row * CELL;
+        if (cell.type === 'lane' && `${cell.row},${cell.col}` === hoverLane && interactive) {
+          ctx.strokeStyle = cell.closed ? colors.closedStripe : colors.spotFreeBorder;
+          ctx.lineWidth = 1.5;
+          ctx.setLineDash([4, 4]);
+          roundRect(ctx, x + 3, y + 3, CELL - 6, CELL - 6, 8);
+          ctx.stroke();
+          ctx.setLineDash([]);
+        }
+        if (!cell.closed) continue;
+        ctx.save();
+        roundRect(ctx, x + 2, y + 2, CELL - 4, CELL - 4, 8);
+        ctx.fillStyle = colors.closedFill;
+        ctx.fill();
+        ctx.clip();
+        ctx.strokeStyle = colors.closedStripe;
+        ctx.lineWidth = 5;
+        ctx.globalAlpha = 0.55;
+        ctx.beginPath();
+        for (let i = -CELL; i < CELL; i += 14) {
+          ctx.moveTo(x + i, y + CELL);
+          ctx.lineTo(x + i + CELL, y);
+        }
+        ctx.stroke();
+        ctx.restore();
+        roundRect(ctx, x + 8, y + CELL / 2 - 8, CELL - 16, 16, 8);
+        ctx.fillStyle = colors.tagBg;
+        ctx.fill();
+        ctx.strokeStyle = colors.closedStripe;
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+        ctx.font = `700 8px ${FONT}`;
+        ctx.fillStyle = colors.closedInk;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('CLOSED', x + CELL / 2, y + CELL / 2 + 0.5);
+      }
+    }
+
     // Spots
     for (const spot of lot.spots) {
       const x = PAD + spot.col * CELL;
       const y = PAD + spot.row * CELL;
       const isTarget = spot.id === targetSpotId;
       const isHover = spot.id === hoverSpot && interactive;
+      // A free spot behind a closed lane: shown faded with a dashed edge, nobody can be sent there.
+      const cutOff = !spot.occupied && unreachable.has(spot.id);
 
       let fill = colors.spotFree;
       let border = colors.spotFreeBorder;
@@ -246,12 +304,16 @@ export default function VirtualLot({
         border = colors.spotTargetBorder;
       }
 
+      ctx.save();
+      if (cutOff) ctx.globalAlpha = 0.45;
       ctx.fillStyle = fill;
       roundRect(ctx, x + 5, y + 5, CELL - 10, CELL - 10, 10);
       ctx.fill();
       ctx.lineWidth = isTarget ? 2.5 : 1.5;
       ctx.strokeStyle = border;
+      if (cutOff) ctx.setLineDash([4, 3]);
       ctx.stroke();
+      ctx.restore();
 
       if (isHover && !spot.occupied) {
         ctx.strokeStyle = colors.spotTargetBorder;
@@ -271,7 +333,15 @@ export default function VirtualLot({
         ctx.fillStyle = isTarget ? colors.spotTargetBorder : colors.text;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText(spot.id, x + CELL / 2, y + CELL / 2);
+        if (cutOff) {
+          ctx.globalAlpha = 0.6;
+          ctx.fillText(spot.id, x + CELL / 2, y + CELL / 2 - 5);
+          ctx.font = `600 8px ${FONT}`;
+          ctx.fillText('no way in', x + CELL / 2, y + CELL / 2 + 8);
+          ctx.globalAlpha = 1;
+        } else {
+          ctx.fillText(spot.id, x + CELL / 2, y + CELL / 2);
+        }
       }
 
       if (spot.id === hardwareSpotId) {
@@ -378,7 +448,7 @@ export default function VirtualLot({
       ctx.stroke();
       ctx.restore();
     }
-  }, [lot, car, ambientCars, path, progress, targetSpotId, pings, hardwareSpotId, hardwareActive, dragPos, hoverSpot, interactive, width, height, theme]);
+  }, [lot, car, ambientCars, path, progress, targetSpotId, pings, hardwareSpotId, hardwareActive, dragPos, hoverSpot, hoverLane, interactive, unreachable, width, height, theme]);
 
   const pointFromEvent = (e: React.MouseEvent<HTMLCanvasElement> | React.PointerEvent<HTMLCanvasElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -426,6 +496,7 @@ export default function VirtualLot({
     }
     const cell = cellAt(pt.x, pt.y);
     setHoverSpot(cell?.type === 'spot' ? (cell.spotId ?? null) : null);
+    setHoverLane(cell?.type === 'lane' ? `${cell.row},${cell.col}` : null);
     setHoverTag(interactive && (isOverHwTag(pt.x, pt.y) || cell?.spotId === hardwareSpotId));
   };
 
@@ -449,15 +520,18 @@ export default function VirtualLot({
     const pt = pointFromEvent(e);
     const cell = cellAt(pt.x, pt.y);
     if (cell?.type === 'spot' && cell.spotId) onToggleSpot(cell.spotId);
+    else if (cell?.type === 'lane') onToggleLane(cell.row, cell.col);
   };
 
   const handleLeave = () => {
     if (pressRef.current) return; // still dragging (the pointer is captured)
     setHoverSpot(null);
+    setHoverLane(null);
     setHoverTag(false);
   };
 
-  const cursor = dragPos ? 'grabbing' : hoverTag ? 'grab' : interactive && hoverSpot ? 'pointer' : 'default';
+  const cursor = dragPos ? 'grabbing' : hoverTag ? 'grab' : interactive && (hoverSpot || hoverLane) ? 'pointer' : 'default';
+  const closedLanes = lot.cells.flat().filter((c) => c.closed).length;
 
   return (
     <canvas
@@ -469,7 +543,7 @@ export default function VirtualLot({
       onPointerCancel={(e) => finishPress(e, false)}
       onPointerLeave={handleLeave}
       role="img"
-      aria-label={`Parking lot map: ${lot.spots.filter((sp) => !sp.occupied).length} of ${lot.spots.length} spots free. The real sensor is on spot ${hardwareSpotId}.`}
+      aria-label={`Parking lot map: ${lot.spots.filter((sp) => !sp.occupied).length} of ${lot.spots.length} spots free. The real sensor is on spot ${hardwareSpotId}.${closedLanes ? ` ${closedLanes} lane ${closedLanes === 1 ? 'section is' : 'sections are'} closed.` : ''}`}
       style={{ cursor, display: 'block', touchAction: 'none' }}
     />
   );

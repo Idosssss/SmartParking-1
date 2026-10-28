@@ -18,6 +18,12 @@ const PATHS = {
   sun: 'M8 10.8a2.8 2.8 0 100-5.6 2.8 2.8 0 000 5.6zM8 1.5v1.5M8 13v1.5M1.5 8H3M13 8h1.5M3.4 3.4l1 1M11.6 11.6l1 1M3.4 12.6l1-1M11.6 4.4l1-1',
   moon: 'M13 9.6A5.5 5.5 0 016.4 3 5.5 5.5 0 1013 9.6z',
   keyboard: 'M1.5 4.5h13v7h-13zM4 7h.01M6.5 7h.01M9 7h.01M11.5 7h.01M5 9.3h6',
+  sliders: 'M2.5 4.5h7M12.5 4.5h1M2.5 11.5h1M6.5 11.5h7M11 3v3M5 10v3',
+  play: 'M5 3.5v9l7.5-4.5z',
+  cone: 'M6.8 3h2.4l2.8 9.5H4zM5.3 8h5.4M2.5 12.5h11',
+  reset: 'M3.2 8a4.8 4.8 0 108.6-2.9M12.2 2.6v2.8H9.4',
+  speaker: 'M2.5 6.2h2.3L8 3.5v9L4.8 9.8H2.5zM10.5 6a2.6 2.6 0 010 4M12.2 4.2a5.2 5.2 0 010 7.6',
+  queue: 'M2.5 5.5h3v5h-3zM6.5 5.5h3v5h-3zM10.5 5.5h3v5h-3z',
 } as const;
 
 export type IconName = keyof typeof PATHS;

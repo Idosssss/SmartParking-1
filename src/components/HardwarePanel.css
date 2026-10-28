@@ -67,16 +67,18 @@
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
-  transition: background-color 0.12s ease, border-color 0.12s ease, transform 0.08s ease;
-}
-
-.hw__button:active:not(:disabled) {
-  transform: scale(0.98);
+  transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.2s ease, transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .hw__button:hover:not(:disabled) {
   background: var(--primary-hover);
   border-color: var(--primary-hover);
+  transform: translateY(-1px);
+}
+
+.hw__button:active:not(:disabled) {
+  transform: translateY(0) scale(0.97);
+  transition-duration: 0.06s;
 }
 
 .hw__button:disabled {
@@ -94,6 +96,7 @@
 .hw__button--ghost:hover:not(:disabled) {
   background: var(--raised);
   border-color: var(--control-hover);
+  box-shadow: 0 6px 14px -10px rgba(16, 42, 52, 0.45);
 }
 
 .hw__note {

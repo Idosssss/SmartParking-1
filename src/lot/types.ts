@@ -5,6 +5,8 @@ export interface Cell {
   col: number;
   type: CellType;
   spotId?: string;
+  /** A lane closed for roadwork: cars cannot drive through it. */
+  closed?: boolean;
 }
 
 export interface Spot {

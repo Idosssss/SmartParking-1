@@ -1,0 +1,136 @@
+.dset {
+  position: relative;
+}
+
+.dset__toggle[aria-expanded='true'] {
+  background: var(--active);
+  border-color: var(--control-hover);
+}
+
+.dset__panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 30;
+  width: min(340px, calc(100vw - 32px));
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 14px 16px 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 24px 48px -24px rgba(16, 42, 52, 0.4);
+  transform-origin: top right;
+  animation: dset-in 0.18s cubic-bezier(0.2, 0.9, 0.3, 1.1) both;
+}
+
+@keyframes dset-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+}
+
+.dset__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: -6px;
+}
+
+.dset__head h2 {
+  margin: 0;
+  font-size: var(--fs-section);
+}
+
+.dset__field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.dset__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.dset__hint {
+  display: block;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--muted);
+}
+
+/* Segmented control: one track, the chosen option sits raised in it. */
+.seg {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  gap: 2px;
+  padding: 2px;
+  border-radius: 8px;
+  background: var(--active);
+}
+
+.seg__option {
+  height: 28px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 550;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.seg__option:hover {
+  color: var(--text);
+  background: var(--hover-tint);
+}
+
+.seg__option[aria-checked='true'] {
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: 0 1px 2px rgba(16, 42, 52, 0.12), 0 0 0 1px var(--border);
+}
+
+.dset__switch {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  cursor: pointer;
+}
+
+.dset__switch input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--primary);
+  flex: none;
+}
+
+.dset__actions {
+  display: flex;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid var(--rule);
+}
+
+.dset__quiet {
+  border-color: transparent;
+  background: transparent;
+  color: var(--muted);
+}
+
+@media (max-width: 900px) {
+  .dset__panel {
+    right: auto;
+    left: 0;
+    transform-origin: top left;
+  }
+}

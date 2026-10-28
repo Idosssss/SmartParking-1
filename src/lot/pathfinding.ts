@@ -4,8 +4,8 @@ const key = (r: number, c: number) => `${r},${c}`;
 
 function isWalkable(lot: LotModel, row: number, col: number): boolean {
   if (row < 0 || row >= lot.rows || col < 0 || col >= lot.cols) return false;
-  const type = lot.cells[row][col].type;
-  return type === 'lane' || type === 'entrance';
+  const cell = lot.cells[row][col];
+  return (cell.type === 'lane' || cell.type === 'entrance') && !cell.closed;
 }
 
 const NEIGHBORS = [
@@ -109,4 +109,23 @@ export function buildRouteToSpot(lot: LotModel, start: GridPoint, spot: Spot): R
   path.push([spot.row, spot.col]);
 
   return { spot, path };
+}
+
+/** The spots a car can reach from `start` (the entrance by default). Lanes closed for roadwork can cut some off. */
+export function reachableSpotIds(lot: LotModel, start: GridPoint = [lot.entrance.row, lot.entrance.col]): Set<string> {
+  const { dist } = bfsFrom(lot, start);
+  const out = new Set<string>();
+  for (const spot of lot.spots) {
+    if (NEIGHBORS.some(([dr, dc]) => dist.has(key(spot.row + dr, spot.col + dc)))) out.add(spot.id);
+  }
+  return out;
+}
+
+/** Opens or closes one lane cell. The entrance and the spots cannot be closed. */
+export function withLaneClosed(lot: LotModel, row: number, col: number, closed: boolean): LotModel {
+  if (lot.cells[row]?.[col]?.type !== 'lane') return lot;
+  return {
+    ...lot,
+    cells: lot.cells.map((r, ri) => (ri === row ? r.map((c, ci) => (ci === col ? { ...c, closed } : c)) : r)),
+  };
 }

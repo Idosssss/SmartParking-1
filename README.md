@@ -1,6 +1,6 @@
 # Smart Parking Lot
 
-[![CI](https://github.com/AvivEli1/SmartParking/actions/workflows/ci.yml/badge.svg)](https://github.com/AvivEli1/SmartParking/actions/workflows/ci.yml)
+[![CI](https://github.com/Idosssss/SmartParking-1/actions/workflows/ci.yml/badge.svg)](https://github.com/Idosssss/SmartParking-1/actions/workflows/ci.yml)
 
 An IoT parking system: an **ESP32** with two IR sensors and an LED strip senses a car and a parking spot, a
 **web app** finds the nearest free spot (Dijkstra) and guides the driver there, and a **simulation study**
@@ -28,7 +28,13 @@ measures how much driving that saves.
   average drive, reroutes) with an occupancy chart, and CSV export of the readings and the event log.
 
 ![Session counters and the live sensor trace](docs/img/app-session-trace.png)
-- **Is pleasant to use:** light and dark theme, keyboard shortcuts (`?` lists them), works on a phone.
+- **Handles the hard cases on screen:** cars wait in line at the gate when the lot is full or busy, lanes can be
+  closed for roadwork and routes go around them, and an **Edge cases to try** panel plays eight hard situations
+  with one click (lot full, spot taken on the way, no way in, a noisy sensor reading, ...).
+
+![Roadwork closes the bottom aisle: S22 has no way in, the car is sent around to S14](docs/img/app-roadwork.png)
+- **Is pleasant to use:** demo settings (traffic level, driving speed, how often your spot is taken, spoken
+  directions), light and dark theme, keyboard shortcuts (`?` lists them), works on a phone.
 
 ![The live demo in the dark theme](docs/img/app-dark.png)
 - **Is measured:** 11.7% less driving to find a spot in our 32-spot lot (33% in a 288-spot lot), see below.
@@ -38,7 +44,7 @@ measures how much driving that saves.
 You need [Node.js](https://nodejs.org/) 18+ and **Chrome or Edge** (for the USB connection).
 
 ```bash
-git clone https://github.com/AvivEli1/SmartParking.git
+git clone https://github.com/Idosssss/SmartParking-1.git
 cd SmartParking
 npm install
 npm run dev          # open http://localhost:5173 (the live demo is at #/demo)

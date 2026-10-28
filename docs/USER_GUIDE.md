@@ -29,8 +29,14 @@ No board? You can still try everything with the on-screen emulator, or with the 
    turn **red** and the app confirms you have parked.
 3. The real-sensor tag (**HW**) moves to the next spot. Clear the spot sensor and bring the next car.
 
-Other things to try: click a free spot to fill it, turn on **Live Traffic**, drag the **HW** tag to another
-spot, switch to the **Simulation study** page for the numbers behind the routing.
+Other things to try: click a free spot to fill it, click a lane to close it for roadwork (click it again to
+reopen it), turn on **Live Traffic**, drag the **HW** tag to another spot, switch to the **Simulation study** page
+for the numbers behind the routing. A car that arrives while another one is being guided, or while no free spot
+can be reached, waits at the gate; the phone shows how many are waiting, and they drive in one by one.
+
+**Edge cases to try** (below the map) sets up a hard situation with one click and plays it: one spot left,
+someone takes your spot, lot full, roadwork in an aisle, free spots with no way in, three cars at once, rush hour,
+and a noisy sensor reading. Each card says what to watch for.
 
 Below the map:
 
@@ -41,13 +47,27 @@ Below the map:
 
 The moon / sun button at the top right switches between the light and the dark theme.
 
+**Settings** (next to Live traffic) changes how the demo plays. The choices are remembered in the browser:
+
+| Setting | Choices |
+| --- | --- |
+| Traffic | Quiet, Normal, Rush hour: how often other cars come and go |
+| Driving speed | Slow (good for presenting), Normal, Fast |
+| Other drivers take your spot | Never, Sometimes, Often: how often a simulated car races you to your spot |
+| Spoken directions | the phone reads each turn aloud (in browsers that can speak) |
+
+**Empty the lot** frees every spot and opens every lane; **Restore defaults** resets the settings.
+
+![The demo settings](img/app-settings.png)
+
 ### Keyboard shortcuts
 
 | Key | Does |
 | --- | --- |
 | `1` `2` `3` | Overview, Live demo, Simulation study |
-| `F` | send a car into the lot (live demo) |
+| `F` | send a car to the gate (live demo) |
 | `T` | live traffic on or off |
+| `E` | empty the lot and open every lane |
 | `D` | dark or light theme |
 | `?` | show the list of shortcuts |
 

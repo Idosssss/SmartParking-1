@@ -79,6 +79,13 @@
 .sidebar__item svg {
   flex: none;
   color: var(--nav-icon);
+  transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), color 0.12s ease;
+}
+
+/* The icon slides a step towards the label, a quiet "this goes somewhere". */
+.sidebar__item:hover svg:first-child {
+  transform: translateX(2px);
+  color: var(--text);
 }
 
 .sidebar__item:hover {
@@ -262,12 +269,16 @@
   background: transparent;
   color: var(--nav-icon);
   cursor: pointer;
-  transition: background-color 0.12s ease, color 0.12s ease;
+  transition: background-color 0.12s ease, color 0.12s ease, transform 0.12s ease;
 }
 
 .topbar__icon:hover {
   background: var(--hover-tint);
   color: var(--text);
+}
+
+.topbar__icon:active {
+  transform: scale(0.92);
 }
 
 .topbar__theme-icon {

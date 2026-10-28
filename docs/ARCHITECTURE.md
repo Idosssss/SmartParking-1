@@ -82,14 +82,14 @@ The logic classes have no Arduino code at all, so they are unit-tested on a norm
 | `src/hardware/useSerialSensors.ts` | React wrapper around `DeviceLink` |
 | `src/hardware/useHardware.ts` | real board **or** emulator, same output: two booleans plus device info |
 | `src/hardware/sensorLogic.ts` | debounce used for the emulator and old firmware |
-| `src/lot/` | the lot model, Dijkstra/BFS routing, turn-by-turn directions (no React) |
-| `src/config/` | all tunable numbers; remembered settings |
-| `src/components/` | UI: lot map (canvas), phone, hardware panel, live sensor trace, session panel, reliability view |
+| `src/lot/` | the lot model, Dijkstra/BFS routing around closed lanes, reachable spots, turn-by-turn directions (no React) |
+| `src/config/` | all tunable numbers; the demo settings (`demoSettings.ts`); remembered settings |
+| `src/components/` | UI: lot map (canvas), phone, hardware panel, live sensor trace, session panel, reliability view, demo settings, edge-case panel (`scenarios.ts` lists them), spoken directions |
 | `src/pages/` | the Overview and Simulation study pages |
 | `src/theme.ts` | light / dark theme: follows the system setting until the user picks one, remembered in the browser |
 | `src/shortcuts.ts` | the keyboard shortcuts, listed once for the handlers and the help dialog |
 | `src/Root.tsx` | the frame (sidebar, top bar) and the hash router: `#/`, `#/demo`, `#/simulation` |
-| `src/App.tsx` | the live demo: state and the animation loop |
+| `src/App.tsx` | the live demo: state, the animation loop, the line of cars at the gate, and the edge-case set-ups |
 
 ## A car arrives
 

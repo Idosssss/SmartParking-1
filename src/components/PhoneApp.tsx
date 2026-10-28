@@ -10,7 +10,13 @@ interface PhoneAppProps {
   steps: DirectionStep[];
   currentStepIndex: number;
   freeCount: number;
+  /** Free spots a car can actually reach (a closed lane can cut some off). */
+  reachableFree: number;
   totalCount: number;
+  /** Cars waiting at the gate behind this one. */
+  queue: number;
+  remainingMeters: number;
+  remainingSeconds: number;
   rerouteNotice: string | null;
   hardwareActive: boolean;
   waitingForSensor: boolean;
@@ -24,7 +30,11 @@ export default function PhoneApp({
   steps,
   currentStepIndex,
   freeCount,
+  reachableFree,
   totalCount,
+  queue,
+  remainingMeters,
+  remainingSeconds,
   rerouteNotice,
   hardwareActive,
   waitingForSensor,
@@ -50,15 +60,24 @@ export default function PhoneApp({
           </div>
         </div>
 
+        {queue > 0 && (
+          <div className="phone__queue" role="status">
+            <Icon name="queue" size={14} />
+            {queue === 1 ? '1 car' : `${queue} cars`} waiting at the gate
+            {reachableFree === 0 ? (freeCount === 0 ? ' for a free spot' : ': no way in to the free spots') : ''}
+          </div>
+        )}
+
         {status === 'idle' && (
           <div className="phone__panel phone__panel--center">
             <div className="phone__pin"><Icon name="pin" size={28} /></div>
             {hardwareActive && (
               <p className="phone__hint">Listening to the entrance sensor. Drive up to the lot entrance.</p>
             )}
-            <button className="phone__button" onClick={onFindSpot} disabled={freeCount === 0}>
-              {freeCount === 0 ? 'Lot Full' : 'Simulate Car Arrival'}
+            <button className="phone__button" onClick={onFindSpot} disabled={reachableFree === 0}>
+              {freeCount === 0 ? 'Lot Full' : reachableFree === 0 ? 'No Way In' : 'Simulate Car Arrival'}
             </button>
+            {freeCount > 0 && reachableFree === 0 && <p className="phone__hint">Every way to the free spots is closed. Reopen a lane on the map.</p>}
           </div>
         )}
 
@@ -91,6 +110,9 @@ export default function PhoneApp({
             <div className="phone__target">
               <span className="phone__target-label">Heading to</span>
               <span className="phone__target-spot">Spot {targetSpotId}</span>
+              <span className="phone__target-eta num">
+                {waitingForSensor ? 'At the spot' : `${remainingMeters} m · about ${remainingSeconds} s`}
+              </span>
             </div>
             <ol className="phone__steps">
               {steps.map((step, i) => (

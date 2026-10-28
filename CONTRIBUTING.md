@@ -3,7 +3,7 @@
 ## Set up
 
 ```bash
-git clone https://github.com/AvivEli1/SmartParking.git
+git clone https://github.com/Idosssss/SmartParking-1.git
 cd SmartParking
 npm install
 npm run dev          # http://localhost:5173

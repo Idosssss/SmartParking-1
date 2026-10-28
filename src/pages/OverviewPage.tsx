@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import './OverviewPage.css';
 
-const REPO = 'https://github.com/AvivEli1/SmartParking';
+const REPO = 'https://github.com/Idosssss/SmartParking-1';
 const DOCS = `${REPO}/blob/main/docs`;
 
 /* ------------------------------------------------------------------ hero lot ---- */

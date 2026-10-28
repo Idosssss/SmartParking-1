@@ -2,7 +2,10 @@
 
 For every likely problem: what the **user sees** (indication), what the system **does about it**
 (recovery), where in the code, and how it was **verified**. The live demo's **Reliability** section shows the
-most important of these checks working in real time.
+most important of these checks working in real time, and its **Edge cases to try** panel plays rows 27, 28, 34, 35,
+37, 38 and 12 with one click each.
+
+![The Edge cases to try panel](img/app-edge-cases.png)
 
 Verification key: **unit** = automated test of the logic, **node** = automated test of the whole firmware
 node against a fake Arduino (`hardware/tests/test_node.cpp`), **browser** = automated test of the web app
@@ -54,13 +57,22 @@ against a simulated board in a real browser (`tests/e2e/`), **manual** = needs t
 | - | --- | --- | --- | --- | --- |
 | 25 | No sensors connected (demo, or a sensor broke on demo day) | Violet last LED, "Mock mode" note | `MOCK ON`, the app toggle, or a short press of the BOOT button plays a generated car-arrives / parks / leaves story; the on-screen emulator is the browser-side equivalent | `mock_source.h`, `useHardware.ts` | unit, node, browser |
 | 26 | No PC connected | LEDs still show open / taken | The board decides everything LED-related by itself | `node.h` | node |
-| 27 | Car arrives and the lot is full | Feed: "Car at the entrance but the lot is full"; the phone button reads "Lot Full" | Nothing to route to | `App.tsx` | manual |
-| 28 | The spot a car is heading to gets taken | "Re-routing" notice on the phone | A new nearest spot is chosen | `App.tsx` | manual |
+| 27 | Car arrives and the lot is full | Feed: "Car at the entrance but the lot is full"; the phone button reads "Lot Full" | The car waits at the gate until a spot frees up (row 35) | `App.tsx` | browser |
+| 28 | The spot a car is heading to gets taken | "Re-routing" notice on the phone | A new nearest spot is chosen | `App.tsx` | browser |
 | 29 | A car parked at the real spot, then simulated traffic "leaves" | Nothing | Cars confirmed by the real sensor are never freed again | `App.tsx` `realParkedRef` | manual |
 | 30 | The user clicks spots or drags the sensor tag while a car is navigating | "Spots are locked while your car is navigating" | Ignored | `App.tsx` | manual |
 | 31 | Optional WiFi is on but the network is gone | Frames show `"wifi":"offline"` | The node keeps measuring and driving the LEDs ("offline mode") and retries every 10 s | `wifi_service.h` | compiled only, see [TESTING.md](TESTING.md) |
 | 32 | The spot sensor reads "open" for a moment right after a real car parked (a hand moving the toy car, one noisy reading) | Nothing: the car stays on the map | The sensor moves on to the next spot at the same instant the car is confirmed, so a later "open" reading can only concern the new spot. A car confirmed by the real sensor is never freed by it again | `App.tsx` `advanceHardwareSpot` | browser (regression test that fails on the old code) |
 | 33 | Dragging the real-sensor tag does not work (touch screen, small target, phone still showing "You've arrived") | The "Real sensor spot" picker in the Hardware panel, and "Locked while a car is on its way" when moving is not allowed | Pointer events work with mouse, touch and pen; the whole spot can be grabbed; the lot can be edited as soon as a trip has ended | `VirtualLot.tsx`, `HardwarePanel.tsx` | browser |
+| 34 | A second car arrives while the first is still being guided | Feed and toast: "Another car is at the entrance. It waits..."; the phone shows "1 car waiting at the gate" | The car waits in line and is guided as soon as the car ahead has parked or cancelled | `App.tsx` `joinQueue`, queue effect | browser |
+| 35 | The lot is full when a car arrives | "Car at the entrance but the lot is full. It waits at the gate..."; the phone shows "Lot Full" and the line | The car waits and is guided by itself the moment a spot frees up | `App.tsx` | browser |
+| 36 | More cars arrive than the gate can hold | "The line at the gate is full (5 cars)" | No more than 5 cars wait; further ones are turned away instead of piling up | `App.tsx` `MAX_QUEUE` | browser |
+| 37 | A lane is closed (roadwork) | The lane is drawn with amber stripes and "CLOSED"; spots it cuts off are faded with "no way in", and the Free spots figure says how many are behind roadwork | Routes go around the closure; cut-off spots are never offered; simulated cars that would pass it turn back | `pathfinding.ts` `isWalkable`, `reachableSpotIds` | unit, browser |
+| 38 | There are free spots, but a closed lane cuts all of them off | The phone says "No Way In" and "Reopen a lane on the map"; the car waits at the gate | Reopening the lane lets the waiting car drive in by itself | `App.tsx`, `PhoneApp.tsx` | unit, browser |
+| 39 | The last spot is taken while the car is being detected | "The lot filled up before the car could be guided. It waits at the gate." | The car goes back in line instead of being lost | `App.tsx` search step | manual |
+| 40 | The driving speed is changed in the middle of a drive | Nothing jumps: the remaining metres stay, only the time left changes | The elapsed drive is rescaled to the new speed | `App.tsx` `updateSettings` | browser |
+| 41 | Saved demo settings are missing, damaged or unknown | Nothing | Each bad value falls back to its default on its own; the good ones are kept | `storedSettings.ts` `loadDemoSettings` | unit |
+| 42 | The browser cannot speak, or refuses to before the page was clicked | The Spoken directions switch is greyed out with "This browser cannot speak" | The directions stay on screen; nothing throws | `speech.ts` | manual |
 
 ## Not handled on purpose
 

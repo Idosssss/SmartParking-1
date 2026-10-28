@@ -9,7 +9,7 @@ import './shell.css';
 
 type Route = 'overview' | 'demo' | 'simulation';
 
-const REPO = 'https://github.com/AvivEli1/SmartParking';
+const REPO = 'https://github.com/Idosssss/SmartParking-1';
 
 function routeFromHash(): Route {
   const hash = window.location.hash;

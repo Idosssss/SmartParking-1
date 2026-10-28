@@ -21,7 +21,10 @@ function turnLabel(prev: DirName, next: DirName): 'straight' | 'left' | 'right' 
 
 export interface DirectionStep {
   text: string;
-  /** index into the path array where this instruction starts applying */
+  /**
+   * Position along the path (in cells) where this instruction becomes the current one. A turn starts half a
+   * cell before its corner and the straight after it half a cell past it, so every step gets its moment.
+   */
   fromIndex: number;
 }
 
@@ -55,14 +58,15 @@ export function buildDirections(path: GridPoint[], spotId: string): DirectionSte
       segmentLength++;
       continue;
     }
-    flushStraight();
+    // A single cell between two turns needs no "go straight" of its own: the next turn already starts there.
+    if (segmentLength > 1 || segmentStart === 0) flushStraight();
     const turn = turnLabel(segmentDir, dir);
     steps.push({
       text: turn === 'straight' ? 'Continue straight' : `Turn ${turn}`,
-      fromIndex: i,
+      fromIndex: i - 0.5,
     });
     segmentDir = dir;
-    segmentStart = i;
+    segmentStart = i + 0.5;
     segmentLength = 1;
   }
   flushStraight();

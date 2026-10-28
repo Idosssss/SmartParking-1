@@ -27,6 +27,13 @@
   color: var(--muted);
 }
 
+.page-head__tools {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: none;
+}
+
 .switch-row {
   display: inline-flex;
   align-items: center;
@@ -43,8 +50,37 @@
   flex: none;
 }
 
+.switch-row {
+  transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.2s ease, transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
 .switch-row:hover {
   background: var(--raised);
+  border-color: var(--control-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px -10px rgba(16, 42, 52, 0.45);
+}
+
+.switch-row:active {
+  transform: translateY(0) scale(0.97);
+  box-shadow: none;
+}
+
+/* The figures under the title light up a little where the pointer is. */
+.kpi {
+  transition: background-color 0.2s ease;
+}
+
+.kpi:hover {
+  background: var(--raised);
+}
+
+.kpi:first-child:hover {
+  border-radius: var(--radius-card) 0 0 var(--radius-card);
+}
+
+.kpi:last-child:hover {
+  border-radius: 0 var(--radius-card) var(--radius-card) 0;
 }
 
 .switch {

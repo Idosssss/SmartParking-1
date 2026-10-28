@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import './LotHeader.css';
 import { useCountUp } from './useCountUp';
 
@@ -11,12 +12,16 @@ interface LotHeaderProps {
   realSpotId: string;
   hardwareActive: boolean;
   realSpotState: 'offline' | 'open' | 'taken';
+  /** Free spots no car can reach because a lane is closed. */
+  cutOff: number;
+  /** Extra controls next to the Live traffic switch. */
+  children?: ReactNode;
 }
 
 const SPOT_STATE_TEXT = { offline: 'Sensor not connected', open: 'Sensor reads open', taken: 'Sensor reads taken' } as const;
 
 /** The title row and the four numbers that say how the lot is doing right now. */
-export default function LotHeader({ free, total, liveTraffic, onToggleLiveTraffic, boardLabel, boardTone, realSpotId, hardwareActive, realSpotState }: LotHeaderProps) {
+export default function LotHeader({ free, total, liveTraffic, onToggleLiveTraffic, boardLabel, boardTone, realSpotId, hardwareActive, realSpotState, cutOff, children }: LotHeaderProps) {
   const occupiedNow = total - free;
   const pctNow = total === 0 ? 0 : Math.round((occupiedNow / total) * 100);
   const freeShown = useCountUp(free);
@@ -40,12 +45,15 @@ export default function LotHeader({ free, total, liveTraffic, onToggleLiveTraffi
               : `Everything here is simulated. Connect the board to drive spot ${realSpotId} with the real sensors.`}
           </p>
         </div>
-        <button className="switch-row" role="switch" aria-checked={liveTraffic} onClick={() => onToggleLiveTraffic(!liveTraffic)}>
-          <span>Live traffic</span>
-          <span className={`switch ${liveTraffic ? 'switch--on' : ''}`} aria-hidden="true">
-            <span className="switch__knob" />
-          </span>
-        </button>
+        <div className="page-head__tools">
+          {children}
+          <button className="switch-row" role="switch" aria-checked={liveTraffic} onClick={() => onToggleLiveTraffic(!liveTraffic)}>
+            <span>Live traffic</span>
+            <span className={`switch ${liveTraffic ? 'switch--on' : ''}`} aria-hidden="true">
+              <span className="switch__knob" />
+            </span>
+          </button>
+        </div>
       </header>
 
       <section className="kpis" aria-label="Lot status">
@@ -56,6 +64,7 @@ export default function LotHeader({ free, total, liveTraffic, onToggleLiveTraffi
               {freeShown}
             </span>
             <span className="kpi__unit"> of {total}</span>
+            {cutOff > 0 && <span className="kpi__unit kpi__unit--small kpi__state--taken">{cutOff} behind roadwork</span>}
           </span>
         </div>
         <div className="kpi">

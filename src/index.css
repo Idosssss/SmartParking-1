@@ -189,17 +189,35 @@ select {
   cursor: pointer;
   text-decoration: none;
   white-space: nowrap;
-  transition: background-color 0.12s ease, border-color 0.12s ease, transform 0.08s ease;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
+/* Buttons rise a pixel under the pointer and settle back when pressed, so a click feels physical. */
 .btn:hover:not(:disabled) {
   background: var(--raised);
   border-color: var(--control-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px -10px rgba(16, 42, 52, 0.45);
 }
 
 .btn:active:not(:disabled) {
   background: var(--active);
-  transform: scale(0.98);
+  transform: translateY(0) scale(0.97);
+  box-shadow: none;
+  transition-duration: 0.06s;
+}
+
+.btn svg {
+  transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.btn:hover:not(:disabled) svg {
+  transform: scale(1.12);
 }
 
 .btn:disabled {
@@ -218,6 +236,7 @@ select {
 .btn--primary:hover:not(:disabled) {
   background: var(--primary-hover);
   border-color: var(--primary-hover);
+  box-shadow: none;
 }
 
 .btn--primary:disabled {
@@ -315,7 +334,10 @@ select {
 .rel__table,
 .kpis,
 .sim-stats,
-.sim-walk {
+.sim-walk,
+.session,
+.trace,
+.edge {
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
@@ -323,7 +345,10 @@ select {
 .activity:hover,
 .lot-card:hover,
 .sim-figure:hover,
-.rel__table:hover {
+.rel__table:hover,
+.session:hover,
+.trace:hover,
+.edge:hover {
   border-color: var(--panel-hover-border);
   box-shadow: var(--lift);
 }
@@ -461,4 +486,27 @@ kbd {
   .only-keyboard {
     display: none !important;
   }
+}
+
+/* Sliders and checkboxes take the brand colour, and a slider's thumb grows while you hold it. */
+input[type='range'],
+input[type='checkbox'] {
+  accent-color: var(--primary);
+}
+
+input[type='range'] {
+  cursor: pointer;
+  transition: filter 0.15s ease;
+}
+
+input[type='range']:hover {
+  filter: brightness(1.08);
+}
+
+input[type='range']::-webkit-slider-thumb {
+  transition: transform 0.15s ease;
+}
+
+input[type='range']:active::-webkit-slider-thumb {
+  transform: scale(1.25);
 }
