@@ -2,7 +2,9 @@
 
 המסמך עובר על ההערות אחת-אחת. בכל סעיף מופיעים שלושה חלקים:
 
-1. **מה היה בגרסה שנבדקה.** הקישורים מובילים לקוד בדיוק כפי שהיה בקומיט האחרון לפני הבדיקה, `d879bf4` מ-19/10, או בקומיטים מוקדמים יותר.
+1. **מה היה בגרסה שנבדקה.**
+   - לשלבים 2 ו-3, הקישורים מובילים לקוד בדיוק כפי שהיה בקומיט `d879bf4` מ-19/10, או בקומיטים מוקדמים יותר.
+   - בדיקת החומרה התקיימה ב-4/10, לפני שקוד החומרה עלה למאגר. ראו סעיף 1.
 2. **מה תיקנו בעקבות ההערות.** כל מה שנעשה אחרי ההערות נמצא בקומיטים מ-28/10 ואילך ([רשימת הקומיטים](https://github.com/Idosssss/SmartParking-1/commits/main)). לא שינינו את ההיסטוריה ולא ערבבנו בין הגרסאות.
 3. **איך לבדוק בעצמכם.**
 
@@ -11,8 +13,9 @@
 | קומיט | תאריך | מה נכנס |
 | --- | --- | --- |
 | [`c79578a`](https://github.com/Idosssss/SmartParking-1/commit/c79578a9693f7088b874c266556b556abe1d652f) | 22/09 | האתר, הסימולציה של החניון, תנועה חיה, ניתוב מחדש, חניון מלא |
+| (אין קומיט) | 04/10 | בדיקת החומרה |
 | [`208ce25`](https://github.com/Idosssss/SmartParking-1/commit/208ce251c51edfd7cbd98357aab2c57367823b89) | 05/10 | חיבור ה-ESP32 והחיישנים לאתר (USB) |
-| [`e877299`](https://github.com/Idosssss/SmartParking-1/commit/e87729994f3986f430d583ef11bef27f4c07dfb9) | 05/10 | פס הלדים (NeoPixel על D26): ירוק פנוי, אדום תפוס |
+| [`e877299`](https://github.com/Idosssss/SmartParking-1/commit/e87729994f3986f430d583ef11bef27f4c07dfb9) | 05/10 | פס הלדים (NeoPixel על D26) משולב במערכת: ירוק פנוי, אדום תפוס (יום אחרי בדיקת החומרה) |
 | [`00c99ce`](https://github.com/Idosssss/SmartParking-1/commit/00c99ce82416165e812fa615c9a634304371351d) | 05/10 | מכונית שהחיישן האמיתי אישר לא משתחררת יותר |
 | [`d879bf4`](https://github.com/Idosssss/SmartParking-1/commit/d879bf468b7472130ed04705b2759f89f5258902) | 19/10 | מחקר הסימולציה ודוח ה-PDF (הגרסה האחרונה לפני הבדיקה) |
 
@@ -48,13 +51,15 @@
 ## 1. בדיקת חומרה: "לא חיברו את ה-LED למערכת ובדקו שהוא עובד"
 
 **מה היה.**
-- פס הלדים היה ממומש בקוד מ-05/10, כלומר לפני הבדיקה:
+- **בבדיקת החומרה, ב-4/10, פס הלדים לא היה מחובר**, ולכן ההערה נכונה עובדתית.
+  - הלדים כבר עבדו קודם לכן, והצגנו אותם עובדים בשיעור.
+  - לא הבנו שבבדיקת החומרה צריך להציג את כל המעגל מחובר יחד, כולל הלדים, וחשבנו שההצגה בשיעור מספיקה. זו טעות שלנו.
+- **למחרת, ב-5/10, הלדים כבר היו משולבים במערכת המלאה**, בקוד הלוח ובאתר. כך זה נראה בקומיט [`e877299`](https://github.com/Idosssss/SmartParking-1/commit/e87729994f3986f430d583ef11bef27f4c07dfb9) מ-5/10, 11:55:
   - [הגדרת D26 כחיבור הלדים](https://github.com/Idosssss/SmartParking-1/blob/e87729994f3986f430d583ef11bef27f4c07dfb9/hardware/smart_parking/smart_parking.ino#L5)
   - [ספריית NeoPixel](https://github.com/Idosssss/SmartParking-1/blob/e87729994f3986f430d583ef11bef27f4c07dfb9/hardware/smart_parking/smart_parking.ino#L19)
   - [הקוד שצובע ירוק / אדום](https://github.com/Idosssss/SmartParking-1/blob/e87729994f3986f430d583ef11bef27f4c07dfb9/hardware/smart_parking/smart_parking.ino#L87-L90)
-- ה-README שהוגש תיעד את חיווט הלדים בפירוט: D26 דרך נגד של 330 אוהם, הזנה מ-VIN, באיזה קצה של הפס מתחברים, ומה עושים אם ירוק ואדום מתחלפים ([README L86-91]({B}/README.md#L86-L91)). את הפרטים האלה לומדים מעבודה עם הרכיב עצמו.
-- הצגנו את הלדים עובדים בשיעור.
-- בבדיקת החומרה עצמה הלדים לא היו מחוברים פיזית. לא הבנו שבבדיקה הזו צריך להציג את כל המעגל המחובר, כולל הלדים, וחשבנו שההצגה בשיעור מספיקה. זו טעות שלנו.
+- **באותו יום ה-README תיעד את החיווט בפירוט:** נגד של 330 אוהם, הזנה מ-VIN, באיזה קצה של הפס מתחברים, ומה עושים אם ירוק ואדום מתחלפים ([README L83-88](https://github.com/Idosssss/SmartParking-1/blob/e87729994f3986f430d583ef11bef27f4c07dfb9/README.md#L83-L88)).
+- שילוב תוך יום מראה שמדובר ברכיב שכבר עבד ושרק לא חובר בזמן הבדיקה, ולא בחומרה שלא נבדקה.
 
 **מה עשינו.**
 - חיברנו ובדקנו את הלדים על הלוח, ומצורף סרטון.
@@ -85,9 +90,9 @@ flowchart LR
   - הבקשה היחידה לרשת בכל האפליקציה טוענת קובץ תוצאות קבוע של מחקר הסימולציה: [בגרסה שנבדקה](https://github.com/Idosssss/SmartParking-1/blob/d879bf468b7472130ed04705b2759f89f5258902/src/pages/SimulationPage.tsx#L48).
   - אפשר לראות את זה בעצמכם: בלשונית Network של Chrome לא מופיעה אף בקשה בזמן שהלוח שולח נתונים. מצורף סרטון.
 - **כך גם היה כתוב בחומר שהוגש:**
-  - הכותרת של קוד הלוח: "The board streams one JSON line per sample over USB serial... The web app reads these lines" ([sketch L7-11]({B}/hardware/smart_parking/smart_parking.ino#L7-L11)).
-  - ה-README: "streams ... over USB serial at 115200 baud", ו-Chrome/Edge נדרשים בגלל Web Serial ([README L116-120]({B}/README.md#L116-L120)).
-- **מקור אפשרי לבלבול, ואנחנו לוקחים עליו אחריות:** בסוף ה-README נשאר סעיף ישן מהגרסה הראשונה של הפרויקט, שהייתה סימולציה בלבד ("Where this is headed"). הוא תיאר תוכנית עתידית לחבר את החומרה "over MQTT/HTTP" ([README L184-190]({B}/README.md#L184-L190)). המימוש בפועל היה USB בלבד, כמו שכתוב בסעיף החומרה ובקוד הלוח. הסעיף הישן הוסר.
+  - הכותרת של קוד הלוח: "The board streams one JSON line per sample over USB serial... The web app reads these lines" ([sketch L7-11](https://github.com/Idosssss/SmartParking-1/blob/d879bf468b7472130ed04705b2759f89f5258902/hardware/smart_parking/smart_parking.ino#L7-L11)).
+  - ה-README: "streams ... over USB serial at 115200 baud", ו-Chrome/Edge נדרשים בגלל Web Serial ([README L116-120](https://github.com/Idosssss/SmartParking-1/blob/d879bf468b7472130ed04705b2759f89f5258902/README.md#L116-L120)).
+- **מקור אפשרי לבלבול, ואנחנו לוקחים עליו אחריות:** בסוף ה-README נשאר סעיף ישן מהגרסה הראשונה של הפרויקט, שהייתה סימולציה בלבד ("Where this is headed"). הוא תיאר תוכנית עתידית לחבר את החומרה "over MQTT/HTTP" ([README L184-190](https://github.com/Idosssss/SmartParking-1/blob/d879bf468b7472130ed04705b2759f89f5258902/README.md#L184-L190)). המימוש בפועל היה USB בלבד, כמו שכתוב בסעיף החומרה ובקוד הלוח. הסעיף הישן הוסר.
 - **בגרסה שנבדקה לא היה WiFi בכלל.** אפשר לראות שאין בקוד הלוח של [`d879bf4`](https://github.com/Idosssss/SmartParking-1/blob/d879bf468b7472130ed04705b2759f89f5258902/hardware/smart_parking/smart_parking.ino) שום קוד רשת.
   - אחרי ההערות הוספנו WiFi כאפשרות: דף סטטוס קטן שהלוח עצמו מגיש, ועדכון קושחה באוויר. גם זה לא ענן.
   - האפשרות כבויה כברירת מחדל ונבדקה רק בהידור, וכך כתוב גם [בתיעוד](TESTING.md).
@@ -100,7 +105,7 @@ flowchart LR
 
 **מה היה.**
 - המערכת לא תלויה באינטרנט, ולכן נפילת אינטרנט לא משפיעה עליה.
-- **החומרה כן טיפלה בניתוק, כבר בגרסה שנבדקה:** הלוח ממשיך לזהות ולהדליק את הלדים גם כשאין קשר עם האפליקציה. זה היה עיקרון תכנון מוצהר: "The LEDs work on their own, so the spot shows OPEN / TAKEN even when the board is not connected to the app" ([sketch L10-11]({B}/hardware/smart_parking/smart_parking.ino#L10-L11), [README L88-89]({B}/README.md#L88-L89)).
+- **החומרה כן טיפלה בניתוק, כבר בגרסה שנבדקה:** הלוח ממשיך לזהות ולהדליק את הלדים גם כשאין קשר עם האפליקציה. זה היה עיקרון תכנון מוצהר: "The LEDs work on their own, so the spot shows OPEN / TAKEN even when the board is not connected to the app" ([sketch L10-11](https://github.com/Idosssss/SmartParking-1/blob/d879bf468b7472130ed04705b2759f89f5258902/hardware/smart_parking/smart_parking.ino#L10-L11), [README L88-89](https://github.com/Idosssss/SmartParking-1/blob/d879bf468b7472130ed04705b2759f89f5258902/README.md#L88-L89)).
 - הקשר שכן יכול ליפול הוא ה-USB, והאפליקציה טיפלה בו כבר בגרסה שנבדקה:
   - [הודעת "Lost connection to the board"](https://github.com/Idosssss/SmartParking-1/blob/d879bf468b7472130ed04705b2759f89f5258902/src/hardware/useSerialSensors.ts#L63)
   - [הודעה כשהפורט תפוס בתוכנה אחרת](https://github.com/Idosssss/SmartParking-1/blob/d879bf468b7472130ed04705b2759f89f5258902/src/hardware/useSerialSensors.ts#L32)
