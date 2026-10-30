@@ -27,6 +27,7 @@
   - [הגדרת D26 כחיבור הלדים](https://github.com/Idosssss/SmartParking-1/blob/e87729994f3986f430d583ef11bef27f4c07dfb9/hardware/smart_parking/smart_parking.ino#L5)
   - [ספריית NeoPixel](https://github.com/Idosssss/SmartParking-1/blob/e87729994f3986f430d583ef11bef27f4c07dfb9/hardware/smart_parking/smart_parking.ino#L19)
   - [הקוד שצובע ירוק / אדום](https://github.com/Idosssss/SmartParking-1/blob/e87729994f3986f430d583ef11bef27f4c07dfb9/hardware/smart_parking/smart_parking.ino#L87-L90)
+- ה-README שהוגש תיעד את חיווט הלדים בפירוט: D26 דרך נגד של 330 אוהם, הזנה מ-VIN, באיזה קצה של הפס מתחברים, ומה עושים אם ירוק ואדום מתחלפים ([README L86-91]({B}/README.md#L86-L91)). את הפרטים האלה לומדים מעבודה עם הרכיב עצמו.
 - הצגנו את הלדים עובדים בשיעור.
 - בבדיקת החומרה עצמה הלדים לא היו מחוברים פיזית. לא הבנו שבבדיקה הזו צריך להציג את כל המעגל המחובר, כולל הלדים, וחשבנו שההצגה בשיעור מספיקה. זו טעות שלנו.
 
@@ -58,6 +59,10 @@ flowchart LR
   - אין באפליקציה קוד שרת, אין API ואין WebSocket.
   - הבקשה היחידה לרשת בכל האפליקציה טוענת קובץ תוצאות קבוע של מחקר הסימולציה: [בגרסה שנבדקה](https://github.com/Idosssss/SmartParking-1/blob/d879bf468b7472130ed04705b2759f89f5258902/src/pages/SimulationPage.tsx#L48).
   - אפשר לראות את זה בעצמכם: בלשונית Network של Chrome לא מופיעה אף בקשה בזמן שהלוח שולח נתונים. מצורף סרטון.
+- **כך גם היה כתוב בחומר שהוגש:**
+  - הכותרת של קוד הלוח: "The board streams one JSON line per sample over USB serial... The web app reads these lines" ([sketch L7-11]({B}/hardware/smart_parking/smart_parking.ino#L7-L11)).
+  - ה-README: "streams ... over USB serial at 115200 baud", ו-Chrome/Edge נדרשים בגלל Web Serial ([README L116-120]({B}/README.md#L116-L120)).
+- **מקור אפשרי לבלבול, ואנחנו לוקחים עליו אחריות:** בסוף ה-README נשאר סעיף ישן מהגרסה הראשונה של הפרויקט, שהייתה סימולציה בלבד ("Where this is headed"). הוא תיאר תוכנית עתידית לחבר את החומרה "over MQTT/HTTP" ([README L184-190]({B}/README.md#L184-L190)). המימוש בפועל היה USB בלבד, כמו שכתוב בסעיף החומרה ובקוד הלוח. הסעיף הישן הוסר.
 - **בגרסה שנבדקה לא היה WiFi בכלל.** אפשר לראות שאין בקוד הלוח של [`d879bf4`](https://github.com/Idosssss/SmartParking-1/blob/d879bf468b7472130ed04705b2759f89f5258902/hardware/smart_parking/smart_parking.ino) שום קוד רשת.
   - אחרי ההערות הוספנו WiFi כאפשרות: דף סטטוס קטן שהלוח עצמו מגיש, ועדכון קושחה באוויר. גם זה לא ענן.
   - האפשרות כבויה כברירת מחדל ונבדקה רק בהידור, וכך כתוב גם [בתיעוד](TESTING.md).
@@ -69,12 +74,13 @@ flowchart LR
 ### "אין התמודדות חומרתית (LED) לכך שהאינטרנט מתנתק"
 
 **מה היה.**
-- המערכת לא תלויה באינטרנט, ולכן נפילת אינטרנט לא משפיעה עליה. הלוח ממשיך לזהות ולהדליק לדים.
+- המערכת לא תלויה באינטרנט, ולכן נפילת אינטרנט לא משפיעה עליה.
+- **החומרה כן טיפלה בניתוק, כבר בגרסה שנבדקה:** הלוח ממשיך לזהות ולהדליק את הלדים גם כשאין קשר עם האפליקציה. זה היה עיקרון תכנון מוצהר: "The LEDs work on their own, so the spot shows OPEN / TAKEN even when the board is not connected to the app" ([sketch L10-11]({B}/hardware/smart_parking/smart_parking.ino#L10-L11), [README L88-89]({B}/README.md#L88-L89)).
 - הקשר שכן יכול ליפול הוא ה-USB, והאפליקציה טיפלה בו כבר בגרסה שנבדקה:
   - [הודעת "Lost connection to the board"](https://github.com/Idosssss/SmartParking-1/blob/d879bf468b7472130ed04705b2759f89f5258902/src/hardware/useSerialSensors.ts#L63)
   - [הודעה כשהפורט תפוס בתוכנה אחרת](https://github.com/Idosssss/SmartParking-1/blob/d879bf468b7472130ed04705b2759f89f5258902/src/hardware/useSerialSensors.ts#L32)
   - [רישום ביומן האירועים](https://github.com/Idosssss/SmartParking-1/blob/d879bf468b7472130ed04705b2759f89f5258902/src/App.tsx#L285)
-- מה שבאמת היה חסר הוא חיווי **על הלוח עצמו**. כאן ההערה נכונה.
+- מה שבאמת היה חסר הוא **נורת אזהרה** על הלוח, שמראה שהקשר נפל. כאן ההערה נכונה.
 
 **מה עשינו.**
 - **האפליקציה שולחת `PING` כל שנייה.**
@@ -111,7 +117,11 @@ flowchart LR
 
 ### "הסימולציה לא לקחה בחשבון זמן חניה... צוואר בקבוק בכניסה"
 
-**משך החניה כן היה במודל.** בגרסה שנבדקה כל מכונית חונה זמן אקראי (לוג-נורמלי, ממוצע 90 דקות; [`params.ts`](https://github.com/Idosssss/SmartParking-1/blob/d879bf468b7472130ed04705b2759f89f5258902/src/sim/params.ts#L41)). מה שהמודל הניח הוא שהחיפוש עצמו מיידי, וכתבנו את זה בדוח כהנחה מפשטת.
+**משך החניה כן היה במודל, ובדוח שהוגש:**
+- כל מכונית חונה זמן אקראי, לוג-נורמלי עם ממוצע של 90 דקות ([`params.ts`](https://github.com/Idosssss/SmartParking-1/blob/d879bf468b7472130ed04705b2759f89f5258902/src/sim/params.ts#L41)).
+- בדוח יש טבלת הנחות עם שורת "Time parked" ([L211](https://github.com/Idosssss/SmartParking-1/blob/d879bf468b7472130ed04705b2759f89f5258902/simulation/build-report.ts#L211)), וגרף שלם של משכי החניה ([L310](https://github.com/Idosssss/SmartParking-1/blob/d879bf468b7472130ed04705b2759f89f5258902/simulation/build-report.ts#L310)).
+
+**גם הגודש בנתיבים הופיע בדוח, כמגבלה מוצהרת.** בפרק 9, "Limits of this study", כתבנו: "Searches do not overlap... The model ignores congestion in the aisles" ([L332](https://github.com/Idosssss/SmartParking-1/blob/d879bf468b7472130ed04705b2759f89f5258902/simulation/build-report.ts#L332)). כלומר זיהינו את הנקודה הזו כבר אז. הערכנו שהשמטה שלה מחמירה רק עם הנהגים בלי האפליקציה, והבדיקה החדשה מראה שזה נכון ביום רגיל אבל לא בעומס כבד (ראו למטה).
 
 **על צוואר הבקבוק אתם צודקים, ובדקנו אותו.** כתבנו סימולציה חדשה, שנייה-אחר-שנייה ([`src/sim/traffic.ts`](../src/sim/traffic.ts)):
 - כל משבצת בנתיב מחזיקה מכונית אחת לכל כיוון.
@@ -156,11 +166,19 @@ flowchart LR
 - **בשאלה "איזו חניה פנויה הכי קרובה?" עדיין אין יעד,** ולכן ל-A* אין יוריסטיקה להתכוונן אליה.
   - מבנה החניון לא משתנה כשמכוניות באות והולכות. לכן חישבנו את המרחקים פעם אחת, ועץ מקטעים (segment tree) מוצא את החניה הפנויה הקרובה ב-`O(log n)` ([`spotIndex.ts`](../src/lot/spotIndex.ts)).
   - בדיקה אוטומטית מוודאת שהאינדקס תמיד בוחר את אותה חניה כמו ה-BFS, לאורך אלפי שינויים אקראיים.
-- חשוב לציין: כבר בגרסה שנבדקה המחקר השתמש בדייקסטרה עם תור עדיפויות, והשווה אותה בבדיקה אוטומטית לנתב של האפליקציה ([`d879bf4`](https://github.com/Idosssss/SmartParking-1/blob/d879bf468b7472130ed04705b2759f89f5258902/src/sim/checks.ts#L37)).
+- **כבר בגרסה שנבדקה:**
+  - המחקר השתמש בדייקסטרה עם תור עדיפויות, ובדק אוטומטית ב-1,920 מצבי חניון אקראיים שהיא בוחרת אותה חניה כמו הנתב של האפליקציה ([`checks.ts`](https://github.com/Idosssss/SmartParking-1/blob/d879bf468b7472130ed04705b2759f89f5258902/src/sim/checks.ts#L37)).
+  - פרק 3 בדוח הסביר את האלגוריתם בפסאודו-קוד, ולמה BFS שווה לדייקסטרה כשכל צעד עולה אותו דבר.
+  - המחקר בדק חניונים בגדלים שונים, מ-32 עד 288 חניות ([`experiments.ts`](https://github.com/Idosssss/SmartParking-1/blob/d879bf468b7472130ed04705b2759f89f5258902/src/sim/experiments.ts#L182-L189)).
 
 ### "תיעוד ברמה נמוכה"
 
-**מה היה.** בגרסה שנבדקה היו README של 190 שורות ודוח PDF של מחקר הסימולציה.
+**מה היה.** בגרסה שנבדקה היו:
+- README של 190 שורות: התקנה, מבנה הפרויקט, חיווט מלא של החיישנים והלדים, הוראות העלאה וחיבור, וסיכום המחקר.
+- דוח מחקר של 13 עמודים ב-9 פרקים: המודל, האלגוריתם עם פסאודו-קוד, שיטת הבדיקה, התוצאות עם רווחי סמך, והמגבלות.
+- הערות מפורטות בקוד, למשל בכותרת של קוד הלוח.
+
+מה שבאמת היה חסר: מסמך ארכיטקטורה, מסמך מקרי קצה ומדריך בעברית. את אלה הוספנו.
 
 **מה עשינו.** הוספנו:
 - מדריך למשתמש בעברית ובאנגלית
