@@ -54,7 +54,7 @@
 
 **מה היה.**
 - **בבדיקת החומרה, ב-4/10, פס הלדים לא היה מחובר**, ולכן ההערה נכונה עובדתית.
-  - לא היינו מודעים לכך ש-LED הוא חלק נדרש בהדגמת החומרה. כשהבנו את זה בבדיקה, שילבנו אותו מיד.
+  - הצגנו את ה-LED עובד בשיעור, וחשבנו שההצגה הזו מספיקה. לא הבנו שצריך לחבר אותו שוב ולהציג אותו כחלק מהמערכת בהדגמת החומרה. כשהבנו את זה בבדיקה, שילבנו אותו מיד.
 - **למחרת, ב-5/10, הלדים כבר היו משולבים במערכת המלאה**, בקוד הלוח ובאתר. כך זה נראה בקומיט [`e877299`](https://github.com/Idosssss/SmartParking-1/commit/e87729994f3986f430d583ef11bef27f4c07dfb9) מ-5/10, 11:55:
   - [הגדרת D26 כחיבור הלדים](https://github.com/Idosssss/SmartParking-1/blob/e87729994f3986f430d583ef11bef27f4c07dfb9/hardware/smart_parking/smart_parking.ino#L5)
   - [ספריית NeoPixel](https://github.com/Idosssss/SmartParking-1/blob/e87729994f3986f430d583ef11bef27f4c07dfb9/hardware/smart_parking/smart_parking.ino#L19)
