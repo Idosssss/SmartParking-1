@@ -52,7 +52,7 @@ You need [Node.js](https://nodejs.org/) 18+ and **Chrome or Edge** (for the USB 
 
 ```bash
 git clone https://github.com/Idosssss/SmartParking-1.git
-cd SmartParking
+cd SmartParking-1
 npm install
 npm run dev          # open http://localhost:5173 (the live demo is at #/demo)
 ```
@@ -66,13 +66,19 @@ A step-by-step guide: [docs/USER_GUIDE.md](docs/USER_GUIDE.md) (Hebrew: [docs/US
 | | |
 | --- | --- |
 | [docs/USER_GUIDE.md](docs/USER_GUIDE.md) | how to set up and use it, what the LEDs mean, troubleshooting |
+| [docs/USER_GUIDE.he.md](docs/USER_GUIDE.he.md) | the user guide in Hebrew |
+| [docs/PROGRAMMER_MANUAL.md](docs/PROGRAMMER_MANUAL.md) · [Hebrew](docs/PROGRAMMER_MANUAL.he.md) | for developers: code layout, the serial protocol, setup, testing, common changes |
+| [docs/QUICK_START.he.md](docs/QUICK_START.he.md) | one page: wiring, flashing, connecting (Hebrew) |
+| [docs/HOW_IT_WORKS.he.md](docs/HOW_IT_WORKS.he.md) | the whole system end to end, with questions and answers (Hebrew) |
+| [docs/ROBUSTNESS.he.md](docs/ROBUSTNESS.he.md) | each robustness standard and the files that meet it (Hebrew) |
 | [docs/HARDWARE.md](docs/HARDWARE.md) | parts, wiring, flashing, calibration, optional WiFi |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | how the firmware and the app are organised, who decides what |
 | [docs/STATE_MACHINE.md](docs/STATE_MACHINE.md) | the firmware modes, LED patterns, USB commands, connection states |
 | [docs/EDGE_CASES.md](docs/EDGE_CASES.md) | every edge case: what the user sees, how it recovers, how it was verified |
 | [docs/TESTING.md](docs/TESTING.md) | the automated tests and the hardware checklist |
 | [docs/USER_TEST.md](docs/USER_TEST.md) | protocol and results table for the user test |
-| [docs/Smart-Parking-Simulation-Report.pdf](docs/Smart-Parking-Simulation-Report.pdf) | the simulation study, 13 pages |
+| [docs/Smart-Parking-Simulation-Report.pdf](docs/Smart-Parking-Simulation-Report.pdf) | the simulation study, 16 pages (chapter 9, traffic, reservations and scale, added after the review) |
+| [docs/pdf/](docs/pdf) | every manual above as a PDF (`npm run docs:pdf`) |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | how to work on it |
 
 ## Project layout

@@ -25,6 +25,42 @@ if (!existsSync(resultsPath)) {
 }
 const { study, checks } = JSON.parse(readFileSync(resultsPath, 'utf8')) as { study: StudyResult; checks: CheckResult[] };
 const charts = studyCharts(study);
+
+// The follow-up studies (chapter 9), each from its own published file.
+interface TrafficRow { policy: 'driver' | 'nearest' | 'reserved' | 'balanced'; cars: number; conflictsPer1000: number; meanGateToParkedSec: number; p95GateToParkedSec: number; meanStuckSec: number; meanMaxGateQueue: number; deadlocks: number }
+interface BenchRow { spots: number; laneCells: number; bfsNearestMs: number; indexQueryUs: number; bfsRouteMs: number; astarRouteMs: number; bfsCellsLookedAt: number; astarCellsLookedAt: number }
+const traffic = JSON.parse(readFileSync(resolve(root, 'public/traffic-study.json'), 'utf8')) as {
+  params: { parkSec: number; leaveSec: number; cellSec: number; aislePenaltyCells: number };
+  results: { name: string; runs: number; rows: TrafficRow[] }[];
+};
+const bench = JSON.parse(readFileSync(resolve(root, 'public/routing-benchmark.json'), 'utf8')) as { takenShare: number; rows: BenchRow[] };
+const POLICY_NAME: Record<TrafficRow['policy'], string> = {
+  driver: 'No app (searching driver)',
+  nearest: 'App, nearest spot (as graded)',
+  reserved: 'App + spot reservation',
+  balanced: 'App + reservation + spread',
+};
+const heavy = traffic.results[traffic.results.length - 1];
+const row = (r: { rows: TrafficRow[] }, k: TrafficRow['policy']) => r.rows.find((x) => x.policy === k)!;
+
+/** Horizontal bars: average seconds from the gate to the spot, per policy, in the heaviest rush. */
+function rushBars(): string {
+  const rows = heavy.rows;
+  const max = Math.max(...rows.map((r) => r.p95GateToParkedSec));
+  const W = 700, top = 10, h = 30, label = 220, scale = (W - label - 150) / max;
+  const bars = rows
+    .map((r, i) => {
+      const y = top + i * (h + 12);
+      const color = r.policy === 'balanced' ? '#1b6c80' : r.policy === 'nearest' ? '#c4242a' : '#8a9297';
+      return `<text x="${label - 8}" y="${y + h / 2 + 4}" text-anchor="end" font-size="11">${POLICY_NAME[r.policy]}</text>
+<rect x="${label}" y="${y + 4}" width="${(r.p95GateToParkedSec * scale).toFixed(1)}" height="${h - 8}" rx="3" fill="${color}" opacity=".22"/>
+<rect x="${label}" y="${y + 4}" width="${(r.meanGateToParkedSec * scale).toFixed(1)}" height="${h - 8}" rx="3" fill="${color}"/>
+<text x="${(label + r.p95GateToParkedSec * scale + 6).toFixed(1)}" y="${y + h / 2 + 4}" font-size="10.5" fill="#6e6e73">${f(r.meanGateToParkedSec, 0)} s (95%: ${f(r.p95GateToParkedSec, 0)} s)</text>`;
+    })
+    .join('');
+  const H = top + rows.length * (h + 12);
+  return `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system,Helvetica,Arial,sans-serif" style="width:100%">${bars}</svg>`;
+}
 const logo = readFileSync(resolve(root, 'public/logo.png')).toString('base64');
 
 const c = study.headline.comparison;
@@ -150,6 +186,7 @@ pre{margin:1.5mm 0 3mm;background:#1d1d1f;color:#f5f5f7;border-radius:2mm;paddin
 <li>In our small prototype lot the saving is ${pc(c.reduction.pct)}, or about ${f(c.savedMetersPerCar, 1)} m per car. The lot is small enough that a driver can see most of it from the entrance, which limits what help is possible.</li>
 <li>The saving grows with the size of the lot, from ${pc(lotLo.reduction, 0)} at ${lotLo.spots} spots to ${pc(lotHi.reduction, 0)} at ${lotHi.spots} spots, because the larger the lot, the less a driver can see and the longer an unaided search takes.</li>
 <li>It grows with how full the lot is, with how long cars stay, and with the share of drivers who use the app.</li>
+<li><b>Added after the review (chapter 9):</b> a second-by-second traffic model. On a normal day there is no bottleneck at the entrance. In a heavy rush, sending everyone to the nearest spot without reserving it jams the first aisle (${f(row(heavy, 'nearest').meanGateToParkedSec, 0)} s from the gate to the spot); reserving the spot and spreading the rush over the aisles brings that to ${f(row(heavy, 'balanced').meanGateToParkedSec, 0)} s, and no app driver is ever sent to a spot another app driver was given.</li>
 </ul>
 ${fig('headline', charts.headline, `Distance from the entrance to the parking spot, for the average car, the median car and the unluckiest 10% and 1% of cars. ${c.days.toLocaleString()} simulated days.`)}
 </section>
@@ -320,16 +357,59 @@ ${table(
 )}
 </section>
 
-<!-- ======================= 9: limits ======================= -->
+<!-- ======================= 9: traffic, reservations and scale ======================= -->
 <section class="page">
-<h2>9. Limits of this study</h2>
+<h2 style="break-before:page">9. Traffic inside the lot, reservations and scale</h2>
+<div class="note">This chapter was added on 30 October 2026, after the course staff's review of the submitted study. It answers three questions from that review: can two drivers be sent to the same spot, does sending everyone to the nearest spot create a bottleneck at the entrance, and does the routing scale to large lots.</div>
+<h3>The traffic model</h3>
+<p>The main study treats each search as instant. Here every car drives the lanes second by second (<code>src/sim/traffic.ts</code>). A lane cell holds one car in each direction. Turning into a spot takes ${traffic.params.parkSec} s and pulling out ${traffic.params.leaveSec} s, and meanwhile the car stands in the lane cell next to the spot and blocks it both ways: this is exactly the bottleneck in question. A car moves one cell every ${f(traffic.params.cellSec, 2)} s (10 km/h), and cars that arrive while the entrance cell is occupied wait in a queue at the gate. Four policies see the same cars:</p>
+${table(
+  [
+    ['No app', 'The main study\'s sensible driver, who only knows the parked cars they can see.'],
+    ['App, nearest spot', 'The policy as submitted: the nearest spot nobody is parked in. Cars already on their way are ignored, so two can be sent to one spot.'],
+    ['App + reservation', 'The nearest spot that is free and not held for another driver. The spot is held from the moment the app gives it until the car is in it.'],
+    ['App + reservation + spread', `Reservation, plus a penalty of ${traffic.params.aislePenaltyCells} cells for every guided car already heading into the same aisle, so a rush spreads over the aisles.`],
+  ],
+  ['Policy', 'How it chooses a spot'],
+)}
+<h3>Results</h3>
+${traffic.results
+  .map(
+    (r) => `<p class="small" style="margin:2mm 0 0"><b>${r.name}</b> (${r.runs} runs, the same cars for every policy)</p>
+${table(
+  r.rows.map((x) => [POLICY_NAME[x.policy], f(x.conflictsPer1000, 1), `${f(x.meanGateToParkedSec, 1)} s`, `${f(x.p95GateToParkedSec, 1)} s`, `${f(x.meanStuckSec, 1)} s`, f(x.meanMaxGateQueue, 1)]),
+  ['Policy', 'Sent to a taken spot, per 1,000 cars', 'Gate to spot, mean', '95th percentile', 'Stuck behind cars', 'Longest gate queue'],
+  ['l', 'r', 'r', 'r', 'r', 'r'],
+)}`,
+  )
+  .join('')}
+${fig('rush', rushBars(), `${heavy.name}. Solid bar: average time from the gate to standing in the spot; light bar: 95th percentile.`)}
+<h3>What it shows</h3>
+<ul>
+<li><b>Same spot, two drivers.</b> Without reservation, in the heavy rush drivers were sent ${Math.round(row(heavy, 'nearest').conflictsPer1000).toLocaleString('en')} times per 1,000 cars to a spot someone else took (one car can be sent several times). With reservation: never, in ${row(heavy, 'reserved').cars.toLocaleString()} cars. The live app now holds the spot it gives each driver and guides several drivers at once. A driver without the app can still take a held spot, which is why the phone can still reroute.</li>
+<li><b>The entrance bottleneck.</b> On a normal day in our lot there is none: cars arrive minutes apart, and every policy takes about ${f(row(traffic.results[0], 'nearest').meanGateToParkedSec, 0)} s from the gate to the spot. In a rush the review's concern is right: the submitted policy jams the first aisle (a gate queue of ${f(row(heavy, 'nearest').meanMaxGateQueue, 0)} cars). Reservation removes most of the jam and spreading removes most of the rest (${f(row(heavy, 'balanced').meanGateToParkedSec, 0)} s, a queue of ${f(row(heavy, 'balanced').meanMaxGateQueue, 0)}).${row(heavy, 'nearest').deadlocks > 0 ? ` Without reservation, cars stood still for a whole minute ${row(heavy, 'nearest').deadlocks} times; the model then lets one squeeze past, so the real jam would be worse than the table shows.` : ''}</li>
+<li><b>The main study's distances stand.</b> They measure how far a car drives, and on normal days the traffic model adds about a second. The chapter 10 limit "searches do not overlap" now has numbers: harmless on a normal day, important in a rush, and fixed by reservation and spreading.</li>
+</ul>
+<h3>Does the routing scale?</h3>
+<p>The app finds the nearest free spot with a breadth-first search from the entrance. That is linear in the size of the lot, so we measured it against A* with the Manhattan-distance heuristic (<code>src/lot/astar.ts</code>) and against an index computed once per layout (<code>src/lot/spotIndex.ts</code>), on lots built with our pattern, ${Math.round(bench.takenShare * 100)}% of the spots taken. Automated tests check that A* returns a route exactly as short as BFS and that the index always picks the same spot as BFS.</p>
+${table(
+  bench.rows.map((r) => [r.spots.toLocaleString(), `${r.bfsNearestMs.toFixed(3)} ms`, `${r.indexQueryUs.toFixed(2)} µs`, `${r.bfsRouteMs.toFixed(3)} ms`, `${r.astarRouteMs.toFixed(3)} ms`, `${r.bfsCellsLookedAt.toLocaleString()} / ${r.astarCellsLookedAt.toLocaleString()}`]),
+  ['Spots', 'Nearest free: BFS', 'Nearest free: index', 'To a known spot: BFS', 'To a known spot: A*', 'Cells looked at, BFS / A*'],
+  ['r', 'r', 'r', 'r', 'r', 'r'],
+)}
+<p>A* needs a destination, so it is the right tool when the spot is known: a reroute, a reserved spot, the real sensor's spot. There it gives the same route while looking at a small fraction of the lot. "Which free spot is nearest?" has no destination yet. Because the layout does not change while cars come and go, the distance from the entrance to every spot is computed once, and a segment tree over the spots in that order finds the nearest free one in O(log n), in well under a microsecond at any size.</p>
+</section>
+
+<!-- ======================= 10: limits ======================= -->
+<section class="page">
+<h2>10. Limits of this study</h2>
 <p>We would rather say plainly where this model is simple than let the number look better than it is.</p>
 <ul>
 <li><b>It is a model, not field data.</b> Real arrival patterns, real parking durations and the real way people drive in a lot differ from our assumptions. The sensitivity charts show how the answer moves when they do; they do not replace measuring a real lot. The sensors in the project can supply those measurements.</li>
 <li><b>The comparison driver is a choice.</b> Without an app, people do not follow a fixed algorithm. We used a sensible one and a pessimistic one and report both, and the headline is the sensible one. A different assumption about how drivers search changes the answer within the range of Figure {{fig:baselineKind}}.</li>
-<li><b>The app is assumed to be perfect.</b> It knows the true state of every spot and drivers follow it. In practice sensors fail, drivers ignore the app, and a spot can be taken between the route being given and the car arriving. The live app handles the last case by re-routing; the study does not charge it for delays.</li>
+<li><b>The app is assumed to be perfect.</b> It knows the true state of every spot and drivers follow it. In practice sensors fail, drivers ignore the app, and a spot can be taken between the route being given and the car arriving. The live app now holds the spot for app drivers and re-routes when a driver without the app takes it; chapter 9 measures both.</li>
 <li><b>The app picks the spot nearest the entrance.</b> Drivers who want the spot nearest to a particular building are not modelled; the savings measured here are for getting parked, not for the walk afterwards.</li>
-<li><b>Searches do not overlap.</b> A car's search is instant relative to other cars. The model ignores congestion in the aisles, which would make unaided search worse, so leaving it out is conservative.</li>
+<li><b>Searches do not overlap (main study).</b> In the main study a car's search is instant relative to other cars, so congestion in the aisles is left out. Chapter 9 adds it: on normal days it changes almost nothing, but in a rush the nearest-spot policy needs reservation and spreading to avoid jamming the first aisle.</li>
 <li><b>One layout.</b> The scaled lots follow the same pattern as our demo lot. A lot with a very different layout (a multi-storey garage, for example) needs its own run.</li>
 <li><b>The emission figure is an average.</b> Slow, stop-and-go driving emits more per km than the average used here, so the CO₂ numbers are conservative.</li>
 </ul>
@@ -337,13 +417,15 @@ ${table(
 <ul>
 <li>Log real arrivals, durations and search distances from the sensors in a real lot and replace the assumed demand with measured demand.</li>
 <li>Add the cost of sensor errors and drivers who ignore the route, and measure how much of the saving survives.</li>
-<li>Model the entrance queue, which a full-lot warning from the app would also shorten.</li>
+<li>Feed the traffic model of chapter 9 with real arrival bursts measured at a lot entrance, and tune the spreading penalty from them.</li>
 </ul>
-<h2 style="margin-top:6mm">10. Reproducing every number</h2>
+<h2 style="margin-top:6mm">11. Reproducing every number</h2>
 <pre>git clone https://github.com/Idosssss/SmartParking-1.git
-cd SmartParking &amp;&amp; npm install
+cd SmartParking-1 &amp;&amp; npm install
 npm run simulate           # self-checks, then the full study (seed ${study.meta.seed}); about a minute or two
-npm run simulate:report    # rebuilds this PDF from the results file</pre>
+npm run simulate:traffic   # chapter 9: the traffic model (about a minute)
+npm run bench:routing      # chapter 9: BFS, A* and the index on lots up to ${bench.rows[bench.rows.length - 1].spots.toLocaleString()} spots
+npm run simulate:report    # rebuilds this PDF from the results files</pre>
 <p>The same seed gives the same numbers on any machine. The assumptions are in <code>src/sim/params.ts</code>; the model is in <code>src/sim/</code> (<code>engine.ts</code> for the day simulation, <code>drivers.ts</code> for the two policies, <code>dijkstra.ts</code> for the router). The simulation page of the website runs the same code in the browser, so anyone can change an assumption and see the answer move.</p>
 <h3>References</h3>
 <ul class="small">

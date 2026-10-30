@@ -4,7 +4,7 @@
 
 ```bash
 git clone https://github.com/Idosssss/SmartParking-1.git
-cd SmartParking
+cd SmartParking-1
 npm install
 npm run dev          # http://localhost:5173
 ```
