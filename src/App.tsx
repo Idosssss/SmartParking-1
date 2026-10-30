@@ -40,6 +40,10 @@ interface AmbientCar {
   startTime: number;
   /** Each car keeps the speed it started with, so changing the setting never makes it jump. */
   msPerCell: number;
+  /** Guided by the app (its spot is held for it) or a driver without the app. */
+  guided: boolean;
+  /** Cells driven before the last reroute, for the session's average drive. */
+  drivenBefore: number;
 }
 
 function angleFor(dr: number, dc: number): number {
@@ -185,6 +189,10 @@ function App({ active = true }: { active?: boolean }) {
   const freeCount = lot.spots.filter((s) => !s.occupied).length;
   const reachable = reachableSpotIds(lot);
   const reachableFree = lot.spots.filter((s) => !s.occupied && reachable.has(s.id)).length;
+  // Spots held for app drivers on their way: shown on the map, never offered to anyone else.
+  const heldNow = new Set(ambientCars.filter((c) => c.guided).map((c) => c.spotId));
+  if (userRoute && userStatus === 'navigating') heldNow.add(userRoute.spot.id);
+  const offerable = lot.spots.filter((s) => !s.occupied && reachable.has(s.id) && !heldNow.has(s.id)).length;
   // The lot can be edited between trips, including while the phone still shows "You've arrived".
   const interactive = userStatus === 'idle' || userStatus === 'arrived';
 
@@ -361,8 +369,11 @@ function App({ active = true }: { active?: boolean }) {
       case 'line':
         prepareLot(() => false);
         setLiveTraffic(false);
-        queueCars(2, 'Three cars arrive together. Two wait at the gate.');
         sendCarIn();
+        logActivity('Three app drivers arrive together', 'info');
+        // The phone's car is being detected; the other two are guided at the same time, each to a held spot.
+        later(150, () => guideAnotherDriver());
+        later(300, () => guideAnotherDriver());
         break;
       case 'rush':
         prepareLot((s) => spotNumber(s) % 3 !== 0);
@@ -411,7 +422,9 @@ function App({ active = true }: { active?: boolean }) {
   const handleFindSpot = (fromHardware = false) => {
     const busy = userStatus === 'detecting' || userStatus === 'searching' || userStatus === 'navigating';
     if (busy || queueRef.current > 0) {
-      joinQueue('Another car is at the entrance. It waits until the car ahead has been guided.');
+      // Nobody waits while there is a spot to offer: the app guides this driver too, to a spot of their own.
+      if (queueRef.current === 0 && guideAnotherDriver()) return;
+      joinQueue('Another car is at the entrance, and every free spot is taken or held for a driver on the way. It waits at the gate.');
       return;
     }
     // A new car clears the previous "You've arrived" screen by itself.
@@ -480,11 +493,26 @@ function App({ active = true }: { active?: boolean }) {
     if (!hwArmed && (!hw.active || !hw.spotOccupied)) setHwArmed(true);
   }, [hwArmed, hw.active, hw.spotOccupied]);
 
-  // While the sensor is waiting to be moved, its spot is reserved: cars aren't routed there.
-  const lotForSearch = (l: LotModel): LotModel =>
-    hwActiveRef.current && !hwArmedRef.current
-      ? { ...l, spots: l.spots.map((s) => (s.id === hardwareSpotIdRef.current ? { ...s, occupied: true } : s)) }
-      : l;
+  // Spots held for app drivers on their way (the phone's car and the other guided cars).
+  const heldSpots = (except?: string): Set<string> => {
+    const held = new Set(ambientCarsRef.current.filter((c) => c.guided && c.id !== except).map((c) => c.spotId));
+    const route = userRouteRef.current;
+    if (route && userStatusRef.current === 'navigating' && except !== 'you') held.add(route.spot.id);
+    return held;
+  };
+
+  // What the app may offer a driver: not taken, not held for another app driver, and not the real
+  // sensor's spot while that sensor is waiting to be moved.
+  const lotForSearch = (l: LotModel, except = 'you'): LotModel => {
+    const held = heldSpots(except);
+    const sensorWaiting = hwActiveRef.current && !hwArmedRef.current;
+    return {
+      ...l,
+      spots: l.spots.map((s) =>
+        held.has(s.id) || (sensorWaiting && s.id === hardwareSpotIdRef.current) ? { ...s, occupied: true } : s,
+      ),
+    };
+  };
 
   // A car parked in the real spot: move the real sensor on to the next nearest free spot.
   const advanceHardwareSpot = (fromSpotId: string) => {
@@ -586,20 +614,24 @@ function App({ active = true }: { active?: boolean }) {
 
   // The next car in line drives in once the car ahead has been guided and a spot can be reached.
   useEffect(() => {
-    if (queue === 0 || reachableFree === 0 || (userStatus !== 'idle' && userStatus !== 'arrived')) return;
+    if (queue === 0 || offerable === 0) return;
+    const phoneFree = userStatus === 'idle' || userStatus === 'arrived';
     const id = setTimeout(
       () => {
+        if (!phoneFree && !guideAnotherDriver()) return;
         queueRef.current = Math.max(0, queueRef.current - 1);
         setQueue(queueRef.current);
-        handleReset();
-        setUserStatus('detecting');
+        if (phoneFree) {
+          handleReset();
+          setUserStatus('detecting');
+        }
         logActivity(`The next car in line drives in${queueRef.current ? ` (${queueRef.current} still waiting)` : ''}`, 'info');
       },
       userStatus === 'arrived' ? 1800 : 700,
     );
     return () => clearTimeout(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [queue, reachableFree, userStatus]);
+  }, [queue, offerable, userStatus]);
 
   // Stage 1: "CAR DETECTED"
   useEffect(() => {
@@ -651,13 +683,29 @@ function App({ active = true }: { active?: boolean }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userStatus]);
 
-  const spawnAmbient = (target: Spot, path: GridPoint[]) => {
+  const spawnAmbient = (target: Spot, path: GridPoint[], guided = false) => {
     const startTime = performance.now();
-    const car: AmbientCar = { id: nextId('amb'), path, spotId: target.id, startTime, msPerCell: ambientMsPerCell(settingsRef.current) };
+    const msPerCellNow = guided ? msPerCell(settingsRef.current) : ambientMsPerCell(settingsRef.current);
+    const car: AmbientCar = { id: nextId('amb'), path, spotId: target.id, startTime, msPerCell: msPerCellNow, guided, drivenBefore: 0 };
     ambientCarsRef.current = [...ambientCarsRef.current, car];
     setAmbientCars((prev) => [...prev, car]);
     setClock(startTime);
-    logActivity(`Another car is heading to Spot ${target.id}`, 'ambient');
+    if (guided) logActivity(`Another app driver is guided to Spot ${target.id}. The spot is held for them.`, 'success');
+    else logActivity(`A driver without the app is heading to Spot ${target.id}`, 'ambient');
+  };
+
+  // A second app driver while the phone's car is still on its way: the app guides both at once,
+  // each to a different spot. Returns false when there is nothing left to offer.
+  const guideAnotherDriver = (): boolean => {
+    const base = lotForSearch(lotRef.current, '');
+    // The real sensor's spot is for the real car (and the phone's test drive), not for simulated drivers.
+    const offer = hwActiveRef.current
+      ? { ...base, spots: base.spots.map((s) => (s.id === hardwareSpotIdRef.current ? { ...s, occupied: true } : s)) }
+      : base;
+    const route = findNearestFreeSpot(offer, [offer.entrance.row, offer.entrance.col]);
+    if (!route) return false;
+    spawnAmbient(route.spot, route.path, true);
+    return true;
   };
 
   // Ambient traffic spawner
@@ -784,11 +832,35 @@ function App({ active = true }: { active?: boolean }) {
       if (ambientCarsRef.current.length > 0) {
         const arrived: string[] = [];
         const remaining: AmbientCar[] = [];
+        let changed = false;
         for (const c of ambientCarsRef.current) {
           const maxT = c.path.length - 1;
           const t = Math.min((now - c.startTime) / c.msPerCell, maxT);
-          if (t >= maxT) arrived.push(c.spotId);
-          else remaining.push(c);
+          const target = lotRef.current.spots.find((s) => s.id === c.spotId);
+          if (t < maxT - 0.02 && target?.occupied) {
+            // Someone else parked there first. An app driver is sent to another spot that is not
+            // held for anyone; a driver without the app looks for the nearest free one.
+            changed = true;
+            const idx = Math.min(Math.floor(t), maxT - 1);
+            const here = c.path[idx];
+            const alt = findNearestFreeSpot(c.guided ? lotForSearch(lotRef.current, c.id) : lotRef.current, here);
+            if (!alt) {
+              logActivity(`No free spot left for the car heading to Spot ${c.spotId}. It drives out.`, 'warning');
+              continue;
+            }
+            if (c.guided) logActivity(`Spot ${c.spotId} was taken by a driver without the app. The app reroutes its driver to Spot ${alt.spot.id}.`, 'warning');
+            remaining.push({ ...c, spotId: alt.spot.id, path: alt.path, startTime: now, drivenBefore: c.drivenBefore + idx });
+            if (c.guided) setSession((st) => ({ ...st, reroutes: st.reroutes + 1 }));
+            continue;
+          }
+          if (t >= maxT) {
+            arrived.push(c.spotId);
+            if (c.guided) setSession((st) => ({ ...st, trips: st.trips + 1, drivenCells: st.drivenCells + c.drivenBefore + maxT }));
+          } else remaining.push(c);
+        }
+        if (changed && arrived.length === 0) {
+          ambientCarsRef.current = remaining;
+          setAmbientCars(remaining);
         }
         if (arrived.length > 0) {
           ambientCarsRef.current = remaining;
@@ -799,7 +871,7 @@ function App({ active = true }: { active?: boolean }) {
           for (const spotId of arrived) {
             const spot = lotRef.current.spots.find((s) => s.id === spotId);
             if (spot) addPing(spot.row, spot.col);
-            logActivity(`Another car parked at Spot ${spotId}`, 'ambient');
+            logActivity(`A car parked at Spot ${spotId}`, 'ambient');
           }
           setAmbientCars(remaining);
         }
@@ -869,7 +941,7 @@ function App({ active = true }: { active?: boolean }) {
   const ambientVisuals: CarVisual[] = ambientCars.map((c) => {
     const maxT = c.path.length - 1;
     const t = Math.min((clock - c.startTime) / c.msPerCell, maxT);
-    return carVisualFromPath(c.path, t);
+    return { ...carVisualFromPath(c.path, t), guided: c.guided };
   });
 
   const pingVisuals: PingVisual[] = pings.map((p) => ({
@@ -944,6 +1016,7 @@ function App({ active = true }: { active?: boolean }) {
               onToggleSpot={toggleSpot}
               unreachable={reachable.size === lot.spots.length ? NO_SPOTS : unreachableIds(lot, reachable)}
               onToggleLane={toggleLane}
+              heldSpotIds={heldNow}
             />
           </div>
           <div className="legend">
@@ -957,7 +1030,10 @@ function App({ active = true }: { active?: boolean }) {
               <span className="legend__swatch legend__swatch--route" /> Your route
             </span>
             <span className="legend__item">
-              <span className="legend__swatch legend__swatch--ambient" /> Other traffic
+              <span className="legend__swatch legend__swatch--guided" /> Other app drivers (spot held)
+            </span>
+            <span className="legend__item">
+              <span className="legend__swatch legend__swatch--ambient" /> Drivers without the app
             </span>
           </div>
           <p className="live__hint">

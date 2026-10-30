@@ -81,6 +81,8 @@ The moon / sun button at the top right switches between the light and the dark t
 | blue, fast blink | calibrating a sensor |
 | orange, blinking | a sensor is broken (check its wires) |
 | last LED violet | mock mode: the data is generated, not measured |
+| first LED blinks amber | the app stopped talking to the board (the tab was closed, the app disconnected, the laptop went to sleep). The spot colour stays on the other LEDs and the board keeps working |
+| first LED blinks cyan | WiFi is switched on but the network is gone (the board keeps working offline) |
 
 ## The BOOT button on the board
 

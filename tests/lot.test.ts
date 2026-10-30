@@ -4,6 +4,10 @@ import { buildDirections } from '../src/lot/directions';
 import { generateLot } from '../src/lot/generateLot';
 import { buildRouteToSpot, findNearestFreeSpot, reachableSpotIds, withLaneClosed } from '../src/lot/pathfinding';
 import type { LotModel } from '../src/lot/types';
+import { aStarRouteToSpot } from '../src/lot/astar';
+import { NearestSpotIndex } from '../src/lot/spotIndex';
+import { scaledLot } from '../src/sim/scaledLot';
+import { mulberry32 } from '../src/sim/rng';
 
 function withTaken(lot: LotModel, ids: string[]): LotModel {
   return { ...lot, spots: lot.spots.map((s) => ({ ...s, occupied: ids.includes(s.id) })) };
@@ -116,4 +120,66 @@ test('every step gets its own stretch of the drive, so a turn is never skipped',
     }
     assert.equal(steps[steps.length - 1].fromIndex, route.path.length - 1);
   }
+});
+
+/** A few random lane closures, never the entrance (same rng, same lot every run). */
+function withRandomClosures(lot: LotModel, rng: () => number, count: number): LotModel {
+  const lanes = lot.cells.flat().filter((c) => c.type === 'lane');
+  for (let i = 0; i < count; i++) {
+    const c = lanes[Math.floor(rng() * lanes.length)];
+    lot = withLaneClosed(lot, c.row, c.col, true);
+  }
+  return lot;
+}
+
+test('A* (Manhattan heuristic) finds a route exactly as short as BFS, to every spot, with or without roadwork', () => {
+  const rng = mulberry32(7);
+  for (const base of [generateLot(), scaledLot(6, 25)]) {
+    for (let trial = 0; trial < 6; trial++) {
+      const lot = trial === 0 ? base : withRandomClosures(base, rng, trial * 2);
+      const start: [number, number] = [lot.entrance.row, lot.entrance.col];
+      for (const spot of lot.spots) {
+        const bfs = buildRouteToSpot(lot, start, spot);
+        const astar = aStarRouteToSpot(lot, start, spot);
+        assert.equal(astar === null, bfs === null, `${spot.id}: both find a route, or neither`);
+        if (!bfs || !astar) continue;
+        assert.equal(astar.path.length, bfs.path.length, `${spot.id}: same length`);
+        assert.ok(astar.path.slice(0, -1).every(([r, c]) => !lot.cells[r][c].closed), 'never through a closed lane');
+      }
+    }
+  }
+});
+
+test('A* looks at far fewer cells than a full search in a big lot', () => {
+  const lot = scaledLot(24, 97); // 4,608 spots
+  const lanes = lot.cells.flat().filter((c) => c.type === 'lane' || c.type === 'entrance').length;
+  const spot = lot.spots[Math.floor(lot.spots.length / 2)];
+  const r = aStarRouteToSpot(lot, [lot.entrance.row, lot.entrance.col], spot)!;
+  assert.ok(r.expanded < lanes / 3, `${r.expanded} of ${lanes} lane cells`);
+});
+
+test('the precomputed index always picks the same spot as the BFS router, as cars come and go', () => {
+  const rng = mulberry32(2026);
+  for (const fresh of [generateLot(), scaledLot(6, 25), withRandomClosures(generateLot(), rng, 3)]) {
+    let lot = fresh;
+    const index = new NearestSpotIndex(lot);
+    for (let step = 0; step < 1500; step++) {
+      const spot = lot.spots[Math.floor(rng() * lot.spots.length)];
+      const taken = rng() < 0.7;
+      lot = { ...lot, spots: lot.spots.map((s) => (s.id === spot.id ? { ...s, occupied: taken } : s)) };
+      index.setTaken(spot.id, taken);
+      const bfs = findNearestFreeSpot(lot);
+      const fast = index.nearestFree();
+      assert.equal(fast?.spotId ?? null, bfs?.spot.id ?? null, `step ${step}`);
+      if (bfs && fast) assert.equal(fast.distance, bfs.path.length - 1);
+    }
+  }
+});
+
+test('the index skips spots behind roadwork and says so when nothing can be reached', () => {
+  let lot = withLaneClosed(generateLot(), 3, 0, true);
+  lot = withTaken(lot, lot.spots.filter((s) => Number(s.id.slice(1)) >= 17).map((s) => s.id));
+  const index = new NearestSpotIndex(lot);
+  assert.equal(index.nearestFree(), null);
+  assert.equal(index.freeCount, 0);
 });

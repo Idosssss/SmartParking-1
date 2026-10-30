@@ -26,8 +26,8 @@ export const SCENARIOS: Scenario[] = [
     id: 'stolen',
     icon: 'warning',
     title: 'Someone takes your spot',
-    setup: 'Sends a car in, then a faster car heads for the same spot.',
-    expect: 'The other car parks first and the phone reroutes you to the next nearest spot.',
+    setup: 'Sends a car in, then a faster driver without the app heads for the same spot.',
+    expect: 'The app holds your spot for app drivers, but a driver without the app does not know. They park first and the phone reroutes you.',
   },
   {
     id: 'full',
@@ -54,8 +54,8 @@ export const SCENARIOS: Scenario[] = [
     id: 'line',
     icon: 'queue',
     title: 'Three cars at once',
-    setup: 'Three cars arrive at the gate together.',
-    expect: 'One is guided at a time. The phone shows how many wait, and each starts when the one before parks.',
+    setup: 'Three app drivers arrive at the gate together.',
+    expect: 'All three are guided at the same time, each to a different spot. A spot held for one driver (dashed, "held") is never offered to another.',
   },
   {
     id: 'rush',

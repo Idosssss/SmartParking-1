@@ -70,7 +70,7 @@ static std::string ask(SmartParkingNode& n, const std::string& cmd) {
   return "";
 }
 
-static const uint32_t RED = 0xFF0000, GREEN = 0x00FF00, BLUE = 0x0000FF;
+static const uint32_t RED = 0xFF0000, GREEN = 0x00FF00, BLUE = 0x0000FF, AMBER = 0xFFAA00;
 
 static void test_boot_and_frames() {
   std::printf("boot and frames\n");
@@ -107,6 +107,49 @@ static void test_spot_and_car() {
   run(n, 1500);
   CHECK(has(lastFrame(), "\"taken\":false") && has(lastFrame(), "\"car\":false"));
   CHECK(g_leds[0] == GREEN);
+}
+
+// The app pings once a second. When it goes quiet the first LED blinks amber; the spot colour stays.
+static void test_link_lost() {
+  std::printf("link to the app lost\n");
+  reset();
+  SmartParkingNode n;
+  n.begin();
+  run(n, 6000);
+  CHECK(g_leds[0] == GREEN);  // never connected: the board works on its own, no warning
+  for (int i = 0; i < 5; i++) {
+    CHECK(ask(n, "PING").empty());  // PING is silent: no reply, no error
+    run(n, 995);
+  }
+  bool amberWhileTalking = false;
+  for (int i = 0; i < 1200; i++) {
+    run(n, 1);
+    if (g_leds[0] == AMBER) amberWhileTalking = true;
+  }
+  CHECK(!amberWhileTalking);  // 2.2 s since the last ping: still connected
+  run(n, 1000);
+  // Now 3.2 s of silence: lost. Watch one second: LED 0 blinks amber, LEDs 1-3 stay green.
+  bool sawAmber = false, sawGreen = false, othersGreen = true;
+  for (int i = 0; i < 1000; i++) {
+    run(n, 1);
+    if (g_leds[0] == AMBER) sawAmber = true;
+    if (g_leds[0] == GREEN) sawGreen = true;
+    if (g_leds[1] != GREEN || g_leds[3] != GREEN) othersGreen = false;
+  }
+  CHECK(sawAmber && sawGreen && othersGreen);
+  // The spot still works while the link is down: a car parks, the LEDs turn red.
+  world(80, 8);
+  run(n, 1000);
+  CHECK(g_leds[1] == RED && g_leds[3] == RED);
+  CHECK(has(lastFrame(), "\"taken\":true"));
+  // The app comes back: the warning stops at once.
+  ask(n, "PING");
+  bool amberAfter = false;
+  for (int i = 0; i < 1500; i++) {
+    run(n, 1);
+    if (g_leds[0] == AMBER) amberAfter = true;
+  }
+  CHECK(!amberAfter && g_leds[0] == RED);
 }
 
 static void test_settings_commands() {
@@ -318,6 +361,7 @@ static void test_clock_wraparound() {
 int main() {
   test_boot_and_frames();
   test_spot_and_car();
+  test_link_lost();
   test_settings_commands();
   test_long_line();
   test_calibration();

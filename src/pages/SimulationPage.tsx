@@ -5,6 +5,7 @@ import type { StudyResult } from '../sim/experiments';
 import { DEFAULT_PARAMS } from '../sim/params';
 import { headlineCharts, shareFarther, studyCharts } from '../sim/studyCharts';
 import type { LiveMessage, LiveRequest } from '../sim/worker';
+import TrafficSection from './TrafficSection';
 import Walkthrough from './Walkthrough';
 import './SimulationPage.css';
 
@@ -112,6 +113,8 @@ export default function SimulationPage() {
       </section>
 
       {data && charts && <PublishedResults study={data.study} charts={charts} checks={data.checks} />}
+
+      <TrafficSection />
 
       <LivePanel />
     </div>
@@ -239,7 +242,7 @@ function PublishedResults({ study, charts, checks }: { study: StudyResult; chart
             <b>Statistics.</b> {c.days.toLocaleString()} independent days; every day is simulated for both policies with identical cars, so the comparison is paired. Confidence intervals come from a bootstrap over days.
           </li>
           <li>
-            <b>Limits.</b> The saving is search driving only (entrance to spot). Drivers who choose a spot by walking distance to a destination, queues at the entrance and the app's own latency are not modelled. Absolute kilometres depend on the assumed cell size; percentages do not.
+            <b>Limits.</b> The saving is search driving only (entrance to spot). Drivers who choose a spot by walking distance to a destination and the app's own latency are not modelled. Traffic inside the lot (queues at the entrance, cars blocking a lane while they park) is studied separately in the next section. Absolute kilometres depend on the assumed cell size; percentages do not.
           </li>
         </ul>
         <div className="sim-checks">

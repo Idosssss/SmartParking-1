@@ -6,11 +6,14 @@
 
 #include <Arduino.h>
 
+#include <cstring>
+
 #include "button.h"
 #include "command_parser.h"
 #include "config.h"
 #include "distance_sensor.h"
 #include "hardware_io.h"
+#include "link_monitor.h"
 #include "mock_source.h"
 #include "presence_detector.h"
 #include "protocol.h"
@@ -48,7 +51,8 @@ class SmartParkingNode {
 
     bool anyFault = !mock_ && (entranceHealth_.fault() != SensorFault::None || spotHealth_.fault() != SensorFault::None);
     state_ = nextState({bootFinished_, calibrating_, anyFault});
-    leds_.show(state_, spotDetector_.present(), mock_, now);
+    link_.update(now);
+    leds_.show(state_, spotDetector_.present(), mock_, linkAlert(), now);
 
     if (now - lastFrameMs_ >= FRAME_PERIOD_MS) {
       lastFrameMs_ = now;
@@ -58,6 +62,14 @@ class SmartParkingNode {
   }
 
  private:
+  // ---- is anyone still listening? ------------------------------------------------------
+  // The node keeps measuring and driving the LEDs either way; this only decides the warning.
+  LinkAlert linkAlert() const {
+    if (link_.state() == LinkState::Lost) return LinkAlert::HostLost;
+    if (std::strcmp(wifi_.state(), "offline") == 0) return LinkAlert::WifiOffline;
+    return LinkAlert::None;
+  }
+
   // ---- reading the sensors (real or mock) ------------------------------------------
   void readSensors(uint32_t now) {
     if (mock_) {
@@ -154,6 +166,7 @@ class SmartParkingNode {
         if (lineTooLong_) {
           emitError("line too long");
         } else if (lineLen_ > 0) {
+          link_.heard(millis());  // any line at all means the app is there
           line_[lineLen_] = '\0';
           handleCommand(parseCommand(line_), millis());
         }
@@ -170,8 +183,9 @@ class SmartParkingNode {
   void handleCommand(const Command& c, uint32_t now) {
     switch (c.type) {
       case CommandType::Empty: break;
+      case CommandType::Ping: break;  // only keeps the link alive (see link_monitor.h)
       case CommandType::Help:
-        Serial.println("{\"help\":\"GET | SET SPOT_CM|ENTRANCE_CM|BRIGHTNESS <n> | MOCK ON|OFF | DEBUG ON|OFF | CAL SPOT|ENTRANCE | RESET | REBOOT\"}");
+        Serial.println("{\"help\":\"GET | SET SPOT_CM|ENTRANCE_CM|BRIGHTNESS <n> | MOCK ON|OFF | DEBUG ON|OFF | CAL SPOT|ENTRANCE | RESET | REBOOT | PING\"}");
         break;
       case CommandType::Get: {
         char buf[160];
@@ -285,6 +299,7 @@ class SmartParkingNode {
   Button button_;
   SettingsStore store_;
   WifiService wifi_;
+  LinkMonitor link_;
 
   // ---- logic -------------------------------------------------------------------------
   Settings settings_;

@@ -9,6 +9,7 @@
 #include "../smart_parking/command_parser.h"
 #include "../smart_parking/distance_sensor.h"
 #include "../smart_parking/ir_math.h"
+#include "../smart_parking/link_monitor.h"
 #include "../smart_parking/mock_source.h"
 #include "../smart_parking/presence_detector.h"
 #include "../smart_parking/protocol.h"
@@ -198,8 +199,32 @@ static void test_mock_scenario() {
   CHECK(taken > 0);
 }
 
+static void test_link_monitor() {
+  std::printf("link_monitor\n");
+  LinkMonitor m;
+  m.update(10000);
+  CHECK(m.state() == LinkState::Standalone);  // no app ever connected: normal, no warning
+  m.heard(10000);
+  CHECK(m.state() == LinkState::Connected);
+  m.update(10000 + HOST_TIMEOUT_MS);
+  CHECK(m.state() == LinkState::Connected);  // exactly at the limit is still fine
+  m.update(10000 + HOST_TIMEOUT_MS + 1);
+  CHECK(m.state() == LinkState::Lost);
+  m.update(10000 + 0xFFFFFFF0u);  // decades of silence and a millis() wrap later
+  CHECK(m.state() == LinkState::Lost);  // still lost: it never "comes back" by itself
+  m.heard(5);
+  CHECK(m.state() == LinkState::Connected);
+  // the clock wraps while the app keeps pinging: no false alarm
+  LinkMonitor w;
+  w.heard(0xFFFFFF00u);
+  w.update(0xFFFFFF00u + 1000);  // wrapped past zero
+  CHECK(w.state() == LinkState::Connected);
+}
+
 static void test_commands() {
   std::printf("command_parser\n");
+  CHECK(parseCommand("ping").type == CommandType::Ping);
+  CHECK(parseCommand("PING now").type == CommandType::Invalid);
   Command c = parseCommand("get");
   CHECK(c.type == CommandType::Get);
   c = parseCommand("  Help  \r\n");
@@ -361,6 +386,7 @@ int main() {
   test_distance_sensor();
   test_mock_scenario();
   test_commands();
+  test_link_monitor();
   test_settings();
   test_state_machine();
   test_button();

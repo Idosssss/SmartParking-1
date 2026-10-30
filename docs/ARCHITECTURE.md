@@ -67,7 +67,8 @@ The logic classes have no Arduino code at all, so they are unit-tested on a norm
 | `protocol.h` | formats the JSON lines | no |
 | `state_machine.h` | `nextState()`: the only place that decides the operating mode | no |
 | `button.h` | `Button`: debounce, short vs long press | no |
-| `status_leds.h` | `StatusLeds`: the LED strip patterns | **yes** |
+| `status_leds.h` | `StatusLeds`: the LED strip patterns, including the link warning on the first LED | **yes** |
+| `link_monitor.h` | `LinkMonitor`: is the app still pinging? (standalone / connected / lost) | no |
 | `wifi_service.h` | `WifiService`: optional WiFi, status page, OTA (off by default) | **yes** |
 | `node.h` | `SmartParkingNode`: owns the objects above and runs the loop | wires them together |
 | `smart_parking.ino` | `setup()` / `loop()` only | - |
@@ -82,7 +83,7 @@ The logic classes have no Arduino code at all, so they are unit-tested on a norm
 | `src/hardware/useSerialSensors.ts` | React wrapper around `DeviceLink` |
 | `src/hardware/useHardware.ts` | real board **or** emulator, same output: two booleans plus device info |
 | `src/hardware/sensorLogic.ts` | debounce used for the emulator and old firmware |
-| `src/lot/` | the lot model, Dijkstra/BFS routing around closed lanes, reachable spots, turn-by-turn directions (no React) |
+| `src/lot/` | the lot model, BFS routing around closed lanes, A* to a known spot (`astar.ts`), the precomputed nearest-spot index (`spotIndex.ts`), reachable spots, turn-by-turn directions (no React) |
 | `src/config/` | all tunable numbers; the demo settings (`demoSettings.ts`); remembered settings |
 | `src/components/` | UI: lot map (canvas), phone, hardware panel, live sensor trace, session panel, reliability view, demo settings, edge-case panel (`scenarios.ts` lists them), spoken directions |
 | `src/pages/` | the Overview and Simulation study pages |

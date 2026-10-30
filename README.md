@@ -6,6 +6,12 @@ An IoT parking system: an **ESP32** with two IR sensors and an LED strip senses 
 **web app** finds the nearest free spot (Dijkstra) and guides the driver there, and a **simulation study**
 measures how much driving that saves.
 
+**Live site:** https://technionparking.vercel.app · **How it works (Hebrew):** [docs/HOW_IT_WORKS.he.md](docs/HOW_IT_WORKS.he.md) ·
+**Response to the review:** [docs/REVIEW_RESPONSE.he.md](docs/REVIEW_RESPONSE.he.md)
+
+The ESP32 talks to the computer over the **USB cable only** (Web Serial). There is no cloud and no server: Vercel only
+hosts the web page's files, and once the page has loaded no reading ever leaves the computer.
+
 ![The overview page](docs/img/overview.png)
 
 ![The live demo connected to a board](docs/img/app-connected.png)
@@ -115,6 +121,8 @@ no app. The saving is 56% against a driver who just follows the lanes, and it gr
 ```bash
 npm run simulate           # self-checks, then the full study; writes public/simulation-results.json
 npm run simulate:report    # rebuilds the PDF report from that file (needs Google Chrome; set CHROME=... if it is elsewhere)
+npm run simulate:traffic   # second-by-second traffic: spot reservation and the entrance bottleneck (public/traffic-study.json)
+npm run bench:routing      # BFS vs A* vs the precomputed index on lots up to 10,368 spots (public/routing-benchmark.json)
 ```
 
 ```
@@ -128,12 +136,22 @@ src/sim/
   experiments.ts   the full study: headline, sweeps (adoption, view distance, demand, lot size, ...)
   charts.ts, studyCharts.ts   dependency-free SVG charts used by both the website and the PDF
   worker.ts        runs a live simulation in a Web Worker for the "Run it yourself" panel
-src/pages/         the Simulation page (SimulationPage.tsx) and the step-by-step walkthrough
-simulation/        run.ts (CLI) and build-report.ts (PDF)
+  traffic.ts       cars drive the lanes second by second: queues at the gate, cars blocking a lane while they park,
+                   and four policies (no app, nearest spot, with reservation, with reservation spread over the aisles)
+src/lot/astar.ts   A* with the Manhattan heuristic, for routes to a known spot
+src/lot/spotIndex.ts  distances computed once + a segment tree: the nearest free spot in O(log n)
+src/pages/         the Simulation page (SimulationPage.tsx, TrafficSection.tsx) and the step-by-step walkthrough
+simulation/        run.ts (CLI), build-report.ts (PDF), traffic-study.ts, bench-routing.ts
 ```
 
 To try another assumption, change it in `src/sim/params.ts` and run `npm run simulate`, or use the
 "Run it yourself" panel on the page. The same seed always gives the same numbers.
+
+**Traffic and reservations.** A second study drives every car through the lanes second by second. On a normal
+day in our lot it changes almost nothing (cars arrive minutes apart). In a heavy rush into a 288-spot lot, sending
+everyone to the nearest spot without reserving it jams the first aisle (261 s from gate to spot on average, a gate
+queue of 19 cars). Reserving the spot and spreading the rush over the aisles brings that to 57 s and 3 cars, and
+no app driver is ever sent to a spot another app driver was given. Details on the Simulation study page.
 
 ## Team
 

@@ -24,6 +24,7 @@
       else if (verb === 'CAL') { send({ ack: 'calibrating' }); setTimeout(() => { dev.spotCm = 16; send({ ack: 'calibrated', value: 16 }); }, 800); }
       else if (verb === 'DEBUG') send({ ack: a === 'ON' ? 'debug_on' : 'debug_off' });
       else if (verb === 'RESET') { dev.spotCm = 15; dev.entranceCm = 15; send({ ack: 'reset' }); }
+      else if (verb === 'PING') { /* like the firmware: only keeps the link alive, no reply */ }
       else send({ err: 'unknown command (try HELP)' });
     },
   });

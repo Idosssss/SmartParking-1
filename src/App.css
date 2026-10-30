@@ -81,6 +81,12 @@
   border-radius: 50%;
 }
 
+.legend__swatch--guided {
+  background: var(--accent);
+  opacity: 0.55;
+  border-radius: 50%;
+}
+
 .legend__swatch--ambient {
   background: var(--ambient);
   border-radius: 50%;

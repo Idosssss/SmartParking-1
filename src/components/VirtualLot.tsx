@@ -63,6 +63,8 @@ export interface CarVisual {
   row: number;
   col: number;
   angle: number; // degrees, 0 = facing right
+  /** Another driver the app is guiding (drawn like your car, a little lighter). */
+  guided?: boolean;
 }
 
 export interface PingVisual {
@@ -88,6 +90,8 @@ interface VirtualLotProps {
   unreachable: Set<string>;
   /** Click a lane to close it for roadwork, click again to reopen it. */
   onToggleLane: (row: number, col: number) => void;
+  /** Spots held for app drivers on their way (never offered to anyone else). */
+  heldSpotIds: Set<string>;
 }
 
 function roundRect(
@@ -184,6 +188,7 @@ export default function VirtualLot({
   onToggleSpot,
   unreachable,
   onToggleLane,
+  heldSpotIds,
 }: VirtualLotProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [hoverSpot, setHoverSpot] = useState<string | null>(null);
@@ -315,6 +320,18 @@ export default function VirtualLot({
       ctx.stroke();
       ctx.restore();
 
+      // Held for another app driver on the way: a dashed edge and "held" under the id.
+      const held = !spot.occupied && !isTarget && heldSpotIds.has(spot.id);
+      if (held) {
+        ctx.save();
+        ctx.setLineDash([4, 3]);
+        ctx.strokeStyle = colors.route;
+        ctx.lineWidth = 2;
+        roundRect(ctx, x + 5, y + 5, CELL - 10, CELL - 10, 10);
+        ctx.stroke();
+        ctx.restore();
+      }
+
       if (isHover && !spot.occupied) {
         ctx.strokeStyle = colors.spotTargetBorder;
         ctx.lineWidth = 2;
@@ -339,6 +356,11 @@ export default function VirtualLot({
           ctx.font = `600 8px ${FONT}`;
           ctx.fillText('no way in', x + CELL / 2, y + CELL / 2 + 8);
           ctx.globalAlpha = 1;
+        } else if (held) {
+          ctx.fillStyle = colors.route;
+          ctx.fillText(spot.id, x + CELL / 2, y + CELL / 2 - 5);
+          ctx.font = `600 8px ${FONT}`;
+          ctx.fillText('held', x + CELL / 2, y + CELL / 2 + 8);
         } else {
           ctx.fillText(spot.id, x + CELL / 2, y + CELL / 2);
         }
@@ -405,8 +427,9 @@ export default function VirtualLot({
       ctx.save();
       ctx.translate(cx(ac.col), cy(ac.row));
       ctx.rotate((ac.angle * Math.PI) / 180);
-      ctx.globalAlpha = 0.85;
-      drawCarShape(ctx, 0.85, colors.ambientCar, colors.ambientCarWindow);
+      ctx.globalAlpha = ac.guided ? 0.7 : 0.85;
+      if (ac.guided) drawCarShape(ctx, 0.9, colors.car, colors.carWindow);
+      else drawCarShape(ctx, 0.85, colors.ambientCar, colors.ambientCarWindow);
       ctx.restore();
     }
 
@@ -448,7 +471,7 @@ export default function VirtualLot({
       ctx.stroke();
       ctx.restore();
     }
-  }, [lot, car, ambientCars, path, progress, targetSpotId, pings, hardwareSpotId, hardwareActive, dragPos, hoverSpot, hoverLane, interactive, unreachable, width, height, theme]);
+  }, [lot, car, ambientCars, path, progress, targetSpotId, pings, hardwareSpotId, hardwareActive, dragPos, hoverSpot, hoverLane, interactive, unreachable, heldSpotIds, width, height, theme]);
 
   const pointFromEvent = (e: React.MouseEvent<HTMLCanvasElement> | React.PointerEvent<HTMLCanvasElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();

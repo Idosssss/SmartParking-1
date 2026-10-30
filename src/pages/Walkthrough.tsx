@@ -149,11 +149,11 @@ export default function Walkthrough() {
           <dl className="sim-walk__facts">
             <div>
               <dt>Without the app</dt>
-              <dd style={{ color: COLORS.mute }}>{(ex.explorerCells * L).toFixed(1)} m</dd>
+              <dd style={{ color: 'var(--muted)' }}>{(ex.explorerCells * L).toFixed(1)} m</dd>
             </div>
             <div>
               <dt>With the app</dt>
-              <dd style={{ color: COLORS.app }}>{(ex.appCells * L).toFixed(1)} m</dd>
+              <dd style={{ color: 'var(--accent)' }}>{(ex.appCells * L).toFixed(1)} m</dd>
             </div>
             <div>
               <dt>Saved on this car</dt>

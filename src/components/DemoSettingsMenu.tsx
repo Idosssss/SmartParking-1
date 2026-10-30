@@ -117,8 +117,8 @@ export default function DemoSettingsMenu({ settings, onChange, onRestoreDefaults
             onChange={(speed) => onChange({ speed })}
           />
           <Segmented
-            label="Other drivers take your spot"
-            hint="How often a simulated car races you to your spot, so you see a reroute."
+            label="Drivers without the app take your spot"
+            hint="The app holds your spot for app drivers, but drivers without the app cannot know. How often one races you to it."
             value={settings.stealing}
             options={SPOT_STEALING}
             onChange={(stealing) => onChange({ stealing })}

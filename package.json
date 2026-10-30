@@ -10,6 +10,8 @@
     "preview": "vite preview",
     "simulate": "tsx simulation/run.ts",
     "simulate:report": "tsx simulation/build-report.ts",
+    "bench:routing": "tsx simulation/bench-routing.ts",
+    "simulate:traffic": "tsx simulation/traffic-study.ts",
     "test": "node --import tsx --test tests/*.test.ts",
     "test:firmware": "sh hardware/tests/run.sh",
     "check": "npm run lint && npm run build && npm test && npm run test:firmware",

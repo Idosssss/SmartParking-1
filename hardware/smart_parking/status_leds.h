@@ -3,12 +3,18 @@
 //   green               spot free            red                 spot taken
 //   blue (steady)       starting up          blue (fast blink)   calibrating
 //   orange (blink)      a sensor is faulty   last LED violet     mock mode is on
+//   first LED blinks amber   the app stopped talking to the board (USB link lost)
+//   first LED blinks cyan    WiFi is switched on but the network is gone
+// A link warning only takes the first LED, half of the time: the spot colour always stays visible.
 #pragma once
 
 #include <Adafruit_NeoPixel.h>
 
 #include "config.h"
+#include "link_monitor.h"
 #include "state_machine.h"
+
+enum class LinkAlert : uint8_t { None, HostLost, WifiOffline };
 
 constexpr uint32_t ledColor(uint8_t r, uint8_t g, uint8_t b) {
   return (static_cast<uint32_t>(r) << 16) | (static_cast<uint32_t>(g) << 8) | b;
@@ -29,7 +35,7 @@ class StatusLeds {
   }
 
   // Call every loop; it only talks to the strip when the picture changes.
-  void show(DeviceState state, bool spotTaken, bool mock, uint32_t nowMs) {
+  void show(DeviceState state, bool spotTaken, bool mock, LinkAlert alert, uint32_t nowMs) {
     uint32_t base = 0;
     switch (state) {
       case DeviceState::Booting: base = kBlue; break;
@@ -38,12 +44,17 @@ class StatusLeds {
       case DeviceState::Running: base = spotTaken ? kRed : kGreen; break;
     }
     bool markMock = mock && state == DeviceState::Running && LED_COUNT > 1;
-    uint32_t key = base ^ (markMock ? 0x01000000u : 0u);
+    uint32_t first = base;
+    if (state == DeviceState::Running && alert != LinkAlert::None && (nowMs / LINK_BLINK_MS) % 2) {
+      first = alert == LinkAlert::HostLost ? kAmber : kCyan;
+    }
+    uint32_t key = base ^ (markMock ? 0x01000000u : 0u) ^ (first != base ? 0x02000000u ^ first : 0u);
     if (key == lastKey_) return;
     lastKey_ = key;
 
     for (int i = 0; i < LED_COUNT; i++) {
       uint32_t color = (markMock && i == LED_COUNT - 1) ? kViolet : base;
+      if (i == 0) color = first;
       strip_.setPixelColor(i, color);
     }
     strip_.show();
@@ -56,6 +67,8 @@ class StatusLeds {
   static constexpr uint32_t kBlue = ledColor(0, 0, 255);
   static constexpr uint32_t kOrange = ledColor(255, 110, 0);
   static constexpr uint32_t kViolet = ledColor(160, 0, 255);
+  static constexpr uint32_t kAmber = ledColor(255, 170, 0);
+  static constexpr uint32_t kCyan = ledColor(0, 200, 255);
 
   Adafruit_NeoPixel strip_{LED_COUNT, PIN_LED_STRIP, NEO_GRB + NEO_KHZ800};
   uint32_t lastKey_ = 0xFFFFFFFF;

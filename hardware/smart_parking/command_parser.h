@@ -1,6 +1,6 @@
 // command_parser.h - reads the text commands that arrive over USB serial.
 //
-//   HELP | GET | RESET | REBOOT
+//   HELP | GET | RESET | REBOOT | PING
 //   SET SPOT_CM <number> | SET ENTRANCE_CM <number> | SET BRIGHTNESS <0-255>
 //   MOCK ON|OFF          DEBUG ON|OFF          CAL SPOT|ENTRANCE
 //
@@ -13,7 +13,7 @@
 #include <cstdlib>
 #include <cstring>
 
-enum class CommandType : uint8_t { Empty, Help, Get, Set, Mock, Debug, Calibrate, Reset, Reboot, Invalid };
+enum class CommandType : uint8_t { Empty, Help, Get, Set, Mock, Debug, Calibrate, Reset, Reboot, Ping, Invalid };
 enum class SettingKey : uint8_t { None, SpotCm, EntranceCm, Brightness };
 enum class CalTarget : uint8_t { None, Spot, Entrance };
 
@@ -77,6 +77,7 @@ inline Command parseCommand(const char* text) {
   if (std::strcmp(verb, "GET") == 0 && n == 1) { c.type = CommandType::Get; return c; }
   if (std::strcmp(verb, "RESET") == 0 && n == 1) { c.type = CommandType::Reset; return c; }
   if (std::strcmp(verb, "REBOOT") == 0 && n == 1) { c.type = CommandType::Reboot; return c; }
+  if (std::strcmp(verb, "PING") == 0 && n == 1) { c.type = CommandType::Ping; return c; }
 
   if (std::strcmp(verb, "MOCK") == 0 || std::strcmp(verb, "DEBUG") == 0) {
     if (n != 2 || !parseOnOff(w[1], c.flag)) return invalid("use ON or OFF");

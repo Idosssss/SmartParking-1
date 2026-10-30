@@ -1,0 +1,61 @@
+{
+  "takenShare": 0.85,
+  "measuredOn": "v22.17.1",
+  "rows": [
+    {
+      "spots": 32,
+      "laneCells": 32,
+      "bfsNearestMs": 0.043250000000000455,
+      "indexBuildMs": 0.7772080000000017,
+      "indexQueryUs": 0.16600000000721593,
+      "bfsRouteMs": 0.012917000000015832,
+      "astarRouteMs": 0.02199999999999136,
+      "bfsCellsLookedAt": 32,
+      "astarCellsLookedAt": 11
+    },
+    {
+      "spots": 288,
+      "laneCells": 192,
+      "bfsNearestMs": 0.07987499999998704,
+      "indexBuildMs": 0.8607920000000036,
+      "indexQueryUs": 0.12499999999704414,
+      "bfsRouteMs": 0.06583399999999529,
+      "astarRouteMs": 0.009166999999990821,
+      "bfsCellsLookedAt": 192,
+      "astarCellsLookedAt": 32
+    },
+    {
+      "spots": 1152,
+      "laneCells": 672,
+      "bfsNearestMs": 0.30762499999997317,
+      "indexBuildMs": 3.399082999999962,
+      "indexQueryUs": 0.12500000002546585,
+      "bfsRouteMs": 0.23062500000003183,
+      "astarRouteMs": 0.022541999999987183,
+      "bfsCellsLookedAt": 672,
+      "astarCellsLookedAt": 87
+    },
+    {
+      "spots": 4608,
+      "laneCells": 2496,
+      "bfsNearestMs": 1.196708000000001,
+      "indexBuildMs": 7.730208000000005,
+      "indexQueryUs": 0.16599999997879422,
+      "bfsRouteMs": 0.8737909999999829,
+      "astarRouteMs": 0.060791999999992186,
+      "bfsCellsLookedAt": 2496,
+      "astarCellsLookedAt": 122
+    },
+    {
+      "spots": 10368,
+      "laneCells": 5472,
+      "bfsNearestMs": 2.9451250000000755,
+      "indexBuildMs": 17.21970799999997,
+      "indexQueryUs": 0.16700000003311288,
+      "bfsRouteMs": 2.0848340000000007,
+      "astarRouteMs": 0.1364170000000513,
+      "bfsCellsLookedAt": 5472,
+      "astarCellsLookedAt": 216
+    }
+  ]
+}

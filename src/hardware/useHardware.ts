@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { EMULATOR_SAMPLE_MS, SENSOR_FAR_CM } from '../config/constants';
+import { EMULATOR_SAMPLE_MS, HEARTBEAT_MS, SENSOR_FAR_CM } from '../config/constants';
 import { clampThreshold, loadThresholds, saveThresholds } from '../config/storedSettings';
 import { detectionsFromFrame } from './deviceModel';
 import { deviceCommands } from './protocol';
@@ -145,6 +145,15 @@ export function useHardware() {
       void serial.send(deviceCommands.get());
     }
   }, [serialConnected, smartDevice, serial]);
+
+  // Heartbeat: while connected, tell the board once a second that the app is still here. If the
+  // tab closes or the app disconnects, the pings stop and the board blinks its first LED amber.
+  const sendLine = serial.send; // stable across renders, unlike the `serial` object itself
+  useEffect(() => {
+    if (!serialConnected || !smartDevice) return;
+    const id = setInterval(() => void sendLine(deviceCommands.ping()), HEARTBEAT_MS);
+    return () => clearInterval(id);
+  }, [serialConnected, smartDevice, sendLine]);
 
   // When the board reports its settings (after a calibration, say) the sliders follow it.
   // Adjusting state while rendering is React's recommended way to react to a changed value.

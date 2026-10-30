@@ -126,4 +126,6 @@ export const deviceCommands = {
   calibrate: (target: 'spot' | 'entrance') => `CAL ${target.toUpperCase()}\n`,
   reset: () => 'RESET\n',
   reboot: () => 'REBOOT\n',
+  /** "I am still here": sent every second so the board can show on its LEDs when the app is gone. */
+  ping: () => 'PING\n',
 };

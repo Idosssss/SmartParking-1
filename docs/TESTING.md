@@ -10,9 +10,9 @@ npm run check     # lint, type-check + build, app tests, firmware tests
 
 | Command | What it covers |
 | --- | --- |
-| `npm test` | the app: the board protocol parser, `DeviceLink` (connect, busy port, unplug, silent board, commands) against a fake serial port, detection logic, saved settings, the lot model and routing, the simulation's self-checks |
+| `npm test` | the app: the board protocol parser, `DeviceLink` (connect, busy port, unplug, silent board, commands) against a fake serial port, detection logic, saved settings, the lot model and routing, the simulation's self-checks; A* and the precomputed spot index against BFS on random lots and closed lanes (50 tests) |
 | `npm run test:firmware` | the firmware on this computer, no board needed: (1) every logic class on its own, (2) the whole `SmartParkingNode` against a fake Arduino: boot, detection, every USB command, bad input, calibration, sensor faults, mock mode, the BOOT button, settings that survive a power cycle, the `millis()` wrap-around |
-| `npm run test:e2e` | the web app in a real (headless) Chrome against a simulated board: connecting, a silent board, a sensor fault, the technician panel, calibration, parked cars that must stay parked, dragging and moving the real sensor, the live sensor trace, the session counters, the theme switch and page changes with the board connected, the demo settings, roadwork lane closures, the line of cars at the gate and every edge-case button and spoken directions (59 checks). Start `npm run dev` first. |
+| `npm run test:e2e` | the web app in a real (headless) Chrome against a simulated board: connecting, a silent board, a sensor fault, the technician panel, calibration, parked cars that must stay parked, dragging and moving the real sensor, the live sensor trace, the session counters, the theme switch and page changes with the board connected, the demo settings, roadwork lane closures, the line of cars at the gate and every edge-case button, spoken directions, held spots for several app drivers, and the heartbeat to the board (61 checks). Start `npm run dev` first. |
 | `npm run build` | full TypeScript type-check and the production build |
 | `npm run lint` | static checks |
 | `arduino-cli compile --fqbn esp32:esp32:esp32 hardware/smart_parking` | the firmware really compiles for the ESP32 (CI does this on every push) |
@@ -39,6 +39,13 @@ These need the real board. Tick them off before a demo or a submission.
 - [ ] Calibrate: car in front of the spot sensor, `CAL SPOT`: the reply says `calibrated`, `GET` shows about twice the measured distance.
 - [ ] Web app: Connect works, the bars move, a car at the entrance starts the phone flow, parking at the spot turns the LEDs red and the HW tag moves on.
 - [ ] Pull the USB cable while connected: the app says "Lost connection"; plug it back: it reconnects by itself.
+- [ ] Link-lost LED, the sure way: in the Arduino IDE Serial Monitor (115200, newline) type `PING` and wait. Within 3 s
+      the **first LED blinks amber** and the other three keep the spot colour; a hand on the spot sensor still turns them red.
+      Type `PING` again: the blinking stops at once.
+- [ ] Link-lost LED with the app: connect the app, then press **Disconnect Arduino** (or close the tab). The pings stop and
+      the first LED blinks amber within 3 s. If the board restarts instead (a short blue flash) when the port closes,
+      it starts with no app and shows no warning, which is correct; use the Serial Monitor test above.
+      (Pulling the cable also cuts the board's power, unless VIN is fed from a separate 5 V supply.)
 - [ ] Close the app tab, open the Arduino Serial Monitor, then open the app: it says the port is busy and tells you what to do.
 - [ ] Optional WiFi (only if you turned it on): the status page opens at `http://smart-parking.local`; switch the router off and the node keeps running; switch it back on and the page returns.
 

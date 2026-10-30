@@ -125,15 +125,15 @@ const PARTS = [
   { part: 'ESP32 DevKit (CP2102 USB)', pin: 'USB to the laptop', job: 'Reads both sensors, decides, reports. Powers everything from VIN.' },
   { part: 'IR distance sensor', pin: 'D34 · VIN · GND', job: 'Sees a car waiting at the entrance.' },
   { part: 'IR distance sensor', pin: 'D35 · VIN · GND', job: 'Sees whether the real parking spot is taken.' },
-  { part: 'WS2812 LED strip, 4 LEDs', pin: 'D26 via 330 Ω · VIN', job: 'Green free, red taken, blue starting, orange a faulty sensor.' },
+  { part: 'WS2812 LED strip, 4 LEDs', pin: 'D26 via 330 Ω · VIN', job: 'Green free, red taken, blue starting, orange a faulty sensor; first LED amber when the app link is lost.' },
   { part: 'BOOT button', pin: 'GPIO0', job: 'Short press: mock mode on/off. Hold 2 s: restore defaults.' },
 ];
 
 const QUALITY = [
-  { value: '24,106', label: 'firmware checks', note: 'detector, fault logic, parser and protocol, run on the PC', href: `${DOCS}/TESTING.md` },
-  { value: '37', label: 'app tests', note: 'protocol, USB link, detection, routing and the study', href: `${DOCS}/TESTING.md` },
-  { value: '35', label: 'browser checks', note: 'a fake board drives the real page in Chrome', href: `${DOCS}/TESTING.md` },
-  { value: '33', label: 'edge cases handled', note: 'pulled cables, silent boards, broken sensors, full lot', href: `${DOCS}/EDGE_CASES.md` },
+  { value: '24,194', label: 'firmware checks', note: 'detector, fault and link logic, parser, protocol and the whole node, run on the PC', href: `${DOCS}/TESTING.md` },
+  { value: '50', label: 'app tests', note: 'protocol, USB link, detection, BFS, A* and the spot index, the study', href: `${DOCS}/TESTING.md` },
+  { value: '61', label: 'browser checks', note: 'a fake board drives the real page in Chrome', href: `${DOCS}/TESTING.md` },
+  { value: '45', label: 'edge cases handled', note: 'lost links, broken sensors, full lot, roadwork, rush hour', href: `${DOCS}/EDGE_CASES.md` },
 ];
 
 const STATES = ['BOOTING', 'RUNNING', 'SENSOR_FAULT', 'CALIBRATING'];

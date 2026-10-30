@@ -64,6 +64,10 @@ constexpr uint32_t SERIAL_BAUD = 115200;
 constexpr uint32_t FRAME_PERIOD_MS = 150;   // one status line about 6-7 times a second
 constexpr size_t COMMAND_BUFFER_SIZE = 64;  // longer lines are rejected, never overflow
 constexpr uint32_t BOOT_LED_TEST_MS = 600;
+// The app sends PING every second while it is connected. After this much silence the link is
+// "lost" and the first LED blinks amber (the spot colour stays on the other LEDs).
+constexpr uint32_t HOST_TIMEOUT_MS = 3000;
+constexpr uint32_t LINK_BLINK_MS = 500;
 
 // ------------------------------------------------------------------ button ---
 constexpr uint32_t BUTTON_DEBOUNCE_MS = 30;

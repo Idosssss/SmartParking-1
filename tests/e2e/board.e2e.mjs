@@ -57,6 +57,9 @@ try {
   check('connects and shows the board as connected', t.includes('Board connected'));
   check('shows entrance and spot sensor rows', t.includes('Entrance') && t.includes('Spot S25'));
   check('asks the board for its settings (GET sent)', (await evaluate('window.__dev.written.includes("GET")')) === true);
+  await sleep(2600);
+  const pings = await evaluate('window.__dev.written.filter((l) => l === "PING").length');
+  check('pings the board every second so its LEDs can show a lost link', pings >= 2 && pings <= 5, `${pings} pings`);
 
   // the board decides a car arrived -> the phone flow starts
   await evaluate('Object.assign(window.__dev, { entrance: 9, car: true })');

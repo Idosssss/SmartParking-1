@@ -1,0 +1,245 @@
+{
+  "seed": 2026,
+  "params": {
+    "cellSec": 1.296,
+    "parkSec": 20,
+    "leaveSec": 15,
+    "dtSec": 0.25,
+    "aislePenaltyCells": 3,
+    "sightCells": 4
+  },
+  "results": [
+    {
+      "name": "Our 32-spot lot, a busy weekday",
+      "runs": 300,
+      "rows": [
+        {
+          "policy": "driver",
+          "cars": 52362,
+          "parkedShare": 0.9640961002253543,
+          "conflictsPer1000": 45.166342003743175,
+          "meanGateToParkedSec": 34.27992638242252,
+          "p95GateToParkedSec": 52.93216133490205,
+          "meanGateWaitSec": 0.13338424161861112,
+          "meanStuckSec": 0.7946396735470068,
+          "meanCells": 7.720593478863753,
+          "meanMaxGateQueue": 1.1266666666666667,
+          "deadlocks": 0
+        },
+        {
+          "policy": "nearest",
+          "cars": 52362,
+          "parkedShare": 0.9641151980443833,
+          "conflictsPer1000": 53.89404530002674,
+          "meanGateToParkedSec": 33.060289024472986,
+          "p95GateToParkedSec": 45.84759046137333,
+          "meanGateWaitSec": 0.13377186284381215,
+          "meanStuckSec": 0.94398114216667,
+          "meanCells": 6.804429213794743,
+          "meanMaxGateQueue": 1.1266666666666667,
+          "deadlocks": 0
+        },
+        {
+          "policy": "reserved",
+          "cars": 52362,
+          "parkedShare": 0.9637905351208892,
+          "conflictsPer1000": 0,
+          "meanGateToParkedSec": 32.31544595028706,
+          "p95GateToParkedSec": 41.47106074169278,
+          "meanGateWaitSec": 0.13168856907990695,
+          "meanStuckSec": 0.453344826219633,
+          "meanCells": 6.6536083699916775,
+          "meanMaxGateQueue": 1.1266666666666667,
+          "deadlocks": 0
+        },
+        {
+          "policy": "balanced",
+          "cars": 52362,
+          "parkedShare": 0.9637714373018601,
+          "conflictsPer1000": 0,
+          "meanGateToParkedSec": 32.180164174541915,
+          "p95GateToParkedSec": 41.39206003770232,
+          "meanGateWaitSec": 0.13107074345106307,
+          "meanStuckSec": 0.3165213514316853,
+          "meanCells": 6.655048053106113,
+          "meanMaxGateQueue": 1.1266666666666667,
+          "deadlocks": 0
+        }
+      ]
+    },
+    {
+      "name": "Morning rush into our empty lot: 3 cars a minute for 10 minutes",
+      "runs": 300,
+      "rows": [
+        {
+          "policy": "driver",
+          "cars": 9079,
+          "parkedShare": 0.9575944487278335,
+          "conflictsPer1000": 555.6779380989095,
+          "meanGateToParkedSec": 50.89228984082014,
+          "p95GateToParkedSec": 101.41127680055797,
+          "meanGateWaitSec": 0.4401484669633446,
+          "meanStuckSec": 16.169053370140325,
+          "meanCells": 8.170922475270302,
+          "meanMaxGateQueue": 1.36,
+          "deadlocks": 0
+        },
+        {
+          "policy": "nearest",
+          "cars": 9079,
+          "parkedShare": 0.9575944487278335,
+          "conflictsPer1000": 583.3241546425818,
+          "meanGateToParkedSec": 50.71436274023215,
+          "p95GateToParkedSec": 112.39827969949692,
+          "meanGateWaitSec": 0.4364925951460931,
+          "meanStuckSec": 16.140010351966875,
+          "meanCells": 8.072003680699332,
+          "meanMaxGateQueue": 1.3633333333333333,
+          "deadlocks": 0
+        },
+        {
+          "policy": "reserved",
+          "cars": 9079,
+          "parkedShare": 0.9575944487278335,
+          "conflictsPer1000": 0,
+          "meanGateToParkedSec": 41.28775739637106,
+          "p95GateToParkedSec": 84.3231706507504,
+          "meanGateWaitSec": 0.3549301591959971,
+          "meanStuckSec": 8.031861053600185,
+          "meanCells": 7.433977455716586,
+          "meanMaxGateQueue": 1.3366666666666667,
+          "deadlocks": 0
+        },
+        {
+          "policy": "balanced",
+          "cars": 9079,
+          "parkedShare": 0.9575944487278335,
+          "conflictsPer1000": 0,
+          "meanGateToParkedSec": 40.51955518795146,
+          "p95GateToParkedSec": 88.21614200342447,
+          "meanGateWaitSec": 0.21871552841614889,
+          "meanStuckSec": 7.399528410397975,
+          "meanCells": 7.434207499424891,
+          "meanMaxGateQueue": 1.2533333333333334,
+          "deadlocks": 0
+        }
+      ]
+    },
+    {
+      "name": "Morning rush into an empty 288-spot lot: 4 cars a minute for 45 minutes",
+      "runs": 40,
+      "rows": [
+        {
+          "policy": "driver",
+          "cars": 7174,
+          "parkedShare": 1,
+          "conflictsPer1000": 525.5087817117368,
+          "meanGateToParkedSec": 66.78734484798663,
+          "p95GateToParkedSec": 129.75468817166984,
+          "meanGateWaitSec": 0.34146388896795754,
+          "meanStuckSec": 8.712677725118484,
+          "meanCells": 23.81363256202955,
+          "meanMaxGateQueue": 2.175,
+          "deadlocks": 0
+        },
+        {
+          "policy": "nearest",
+          "cars": 7174,
+          "parkedShare": 1,
+          "conflictsPer1000": 832.868692500697,
+          "meanGateToParkedSec": 74.51647085858045,
+          "p95GateToParkedSec": 143.19761987496167,
+          "meanGateWaitSec": 0.3568667325698533,
+          "meanStuckSec": 23.483551714524673,
+          "meanCells": 19.006412043490382,
+          "meanMaxGateQueue": 2.175,
+          "deadlocks": 0
+        },
+        {
+          "policy": "reserved",
+          "cars": 7174,
+          "parkedShare": 1,
+          "conflictsPer1000": 0,
+          "meanGateToParkedSec": 53.20339586555006,
+          "p95GateToParkedSec": 75.55959649477154,
+          "meanGateWaitSec": 0.2896796681706339,
+          "meanStuckSec": 3.9046557011430165,
+          "meanCells": 18.17270699749094,
+          "meanMaxGateQueue": 2.05,
+          "deadlocks": 0
+        },
+        {
+          "policy": "balanced",
+          "cars": 7174,
+          "parkedShare": 1,
+          "conflictsPer1000": 0,
+          "meanGateToParkedSec": 49.675726503966565,
+          "p95GateToParkedSec": 63.7956387270242,
+          "meanGateWaitSec": 0.24531808467467628,
+          "meanStuckSec": 0.4194661276833008,
+          "meanCells": 18.173961527739056,
+          "meanMaxGateQueue": 1.95,
+          "deadlocks": 0
+        }
+      ]
+    },
+    {
+      "name": "Heavy rush into an empty 288-spot lot: 8 cars a minute for 30 minutes",
+      "runs": 40,
+      "rows": [
+        {
+          "policy": "driver",
+          "cars": 9442,
+          "parkedShare": 1,
+          "conflictsPer1000": 1254.924804066935,
+          "meanGateToParkedSec": 128.5586097528437,
+          "p95GateToParkedSec": 285.46448435727507,
+          "meanGateWaitSec": 4.322219157630818,
+          "meanStuckSec": 52.25947892395679,
+          "meanCells": 33.06629951281508,
+          "meanMaxGateQueue": 7.3,
+          "deadlocks": 2
+        },
+        {
+          "policy": "nearest",
+          "cars": 9442,
+          "parkedShare": 1,
+          "conflictsPer1000": 1834.7807667866978,
+          "meanGateToParkedSec": 261.0158486852733,
+          "p95GateToParkedSec": 676.6503339549527,
+          "meanGateWaitSec": 43.558318500990275,
+          "meanStuckSec": 157.11237026053803,
+          "meanCells": 25.11851302690108,
+          "meanMaxGateQueue": 19.375,
+          "deadlocks": 303
+        },
+        {
+          "policy": "reserved",
+          "cars": 9442,
+          "parkedShare": 1,
+          "conflictsPer1000": 0,
+          "meanGateToParkedSec": 64.72036044125717,
+          "p95GateToParkedSec": 92.79473118018359,
+          "meanGateWaitSec": 0.6932210640065858,
+          "meanStuckSec": 10.484987290828215,
+          "meanCells": 21.194768057614912,
+          "meanMaxGateQueue": 3.625,
+          "deadlocks": 0
+        },
+        {
+          "policy": "balanced",
+          "cars": 9442,
+          "parkedShare": 1,
+          "conflictsPer1000": 0,
+          "meanGateToParkedSec": 57.483652116749646,
+          "p95GateToParkedSec": 82.13145135343075,
+          "meanGateWaitSec": 0.439990816177736,
+          "meanStuckSec": 3.5003971616183014,
+          "meanCells": 21.195509425969075,
+          "meanMaxGateQueue": 2.9,
+          "deadlocks": 0
+        }
+      ]
+    }
+  ]
+}

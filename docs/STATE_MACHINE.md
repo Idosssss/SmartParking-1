@@ -29,6 +29,13 @@ Mock mode is a flag, not a state: with it on, the board runs normally but takes 
 generated scenario instead of the sensors, and the **last LED turns violet** so nobody mistakes
 generated data for real data.
 
+The link to the app is a flag too. While the web app is connected it sends `PING` every second. If
+it goes quiet for 3 s (the tab was closed, the app disconnected, the laptop slept) the **first LED
+blinks amber**, and blinks **cyan** if WiFi is switched on and the network is gone. Only the first LED,
+half of the time: the spot colour stays visible, and the board keeps deciding open / taken on its own.
+A board that never had an app connected shows no warning, because working alone is normal for it
+(`link_monitor.h`).
+
 **Inputs that change things**
 
 | Input | Effect |
@@ -50,6 +57,7 @@ generated data for real data.
 | `DEBUG ON` / `DEBUG OFF` | also print raw ADC values and voltages |
 | `RESET` | restore default settings |
 | `REBOOT` | restart the board |
+| `PING` | "the app is still here" (sent every second by the app; no reply) |
 
 Bad input gets an `{"err":"..."}` reply and is otherwise ignored.
 

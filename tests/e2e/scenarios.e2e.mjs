@@ -66,10 +66,10 @@ try {
   await openSettings();
   check('the settings panel opens with the defaults', (await chosen('Traffic')) === 'normal' && (await chosen('Driving speed')) === 'normal');
   await choose('Driving speed', 'fast');
-  await choose('Other drivers take your spot', 'off');
+  await choose('Drivers without the app take your spot', 'off');
   await load();
   await openSettings();
-  check('settings are remembered after a reload', (await chosen('Driving speed')) === 'fast' && (await chosen('Other drivers take your spot')) === 'off');
+  check('settings are remembered after a reload', (await chosen('Driving speed')) === 'fast' && (await chosen('Drivers without the app take your spot')) === 'off');
   await call('Input.dispatchKeyEvent', { type: 'keyDown', key: 'Escape', code: 'Escape', windowsVirtualKeyCode: 27 });
   await sleep(200);
   check('Escape closes the settings panel', !(await evaluate('!!document.querySelector(".dset__panel")')));
@@ -111,9 +111,13 @@ try {
   const before = await guided();
   await run('Three cars at once');
   await sleep(500);
-  check('three cars: the phone shows two waiting', /2 cars waiting at the gate/.test(await phone()), await phone());
-  check('three cars: all three are guided, one after the other', await until(async () => (await guided()) === before + 3, 30000), `guided=${await guided()}`);
-  check('three cars: nobody is left waiting', !/waiting at the gate/.test(await phone()));
+  check('three cars: nobody waits at the gate', !/waiting at the gate/.test(await phone()), await phone());
+  const heldFor = async () => [...(await feed()).matchAll(/app driver is guided to Spot (S\d+)/g)].map((m) => m[1]);
+  check('three cars: the other two are guided at the same time, to held spots', (await until(async () => (await heldFor()).length >= 2, 4000)), JSON.stringify(await heldFor()));
+  check('three cars: all three are guided and parked', await until(async () => (await guided()) === before + 3, 30000), `guided=${await guided()}`);
+  const yours = (await feed()).match(/Routing you to Spot (S\d+)/)?.[1];
+  const spots = [...(await heldFor()).slice(0, 2), yours];
+  check('three cars: three different spots (a held spot is never offered twice)', new Set(spots).size === 3 && !spots.includes(undefined), JSON.stringify(spots));
 
   // 8. A noisy reading is not a car.
   await run('Noisy sensor reading');

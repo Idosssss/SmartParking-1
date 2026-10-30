@@ -14,7 +14,7 @@ export const DRIVE_SPEEDS = {
   fast: { label: 'Fast', factor: 0.5 },
 } as const;
 
-/** How likely a new simulated car heads for the spot you were just sent to. */
+/** How likely a driver without the app heads for the spot you were just sent to (they cannot see that it is held). */
 export const SPOT_STEALING = {
   off: { label: 'Never', chance: 0 },
   low: { label: 'Sometimes', chance: 0.2 },

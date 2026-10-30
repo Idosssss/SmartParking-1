@@ -29,3 +29,7 @@ export const SENSOR_FAR_CM = 80;
 
 // ---- the emulator -------------------------------------------------------------------
 export const EMULATOR_SAMPLE_MS = 150;
+
+// ---- the link to the board -----------------------------------------------------------
+/** The app pings the board this often. The board warns on its LEDs after 3 s without one (HOST_TIMEOUT_MS in config.h). */
+export const HEARTBEAT_MS = 1000;
