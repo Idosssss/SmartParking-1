@@ -3,8 +3,9 @@
 המסמך עובר על ההערות אחת-אחת. בכל סעיף מופיעים שלושה חלקים:
 
 1. **מה היה בגרסה שנבדקה.**
-   - לשלבים 2 ו-3, הקישורים מובילים לקוד בדיוק כפי שהיה בקומיט `d879bf4` מ-19/10, או בקומיטים מוקדמים יותר.
-   - בדיקת החומרה התקיימה ב-4/10, לפני שקוד החומרה עלה למאגר. ראו סעיף 1.
+   - **בדיקת החומרה (4/10):** לפני שקוד החומרה עלה למאגר. ראו סעיף 1.
+   - **הדגמת הפרויקט, שלב 2 (18/10):** הגרסה העדכנית באותו יום הייתה `00c99ce` מ-5/10, והקישורים בסעיף 2 מובילים אליה.
+   - **הגשת שלב 3 (25/10):** הגרסה העדכנית באותו יום הייתה `d879bf4` מ-19/10, והקישורים בסעיף 3 מובילים אליה.
 2. **מה תיקנו בעקבות ההערות.** כל מה שנעשה אחרי ההערות נמצא בקומיטים מ-28/10 ואילך ([רשימת הקומיטים](https://github.com/Idosssss/SmartParking-1/commits/main)). לא שינינו את ההיסטוריה ולא ערבבנו בין הגרסאות.
 3. **איך לבדוק בעצמכם.**
 
@@ -16,8 +17,9 @@
 | (אין קומיט) | 04/10 | בדיקת החומרה |
 | [`208ce25`](https://github.com/Idosssss/SmartParking-1/commit/208ce251c51edfd7cbd98357aab2c57367823b89) | 05/10 | חיבור ה-ESP32 והחיישנים לאתר (USB) |
 | [`e877299`](https://github.com/Idosssss/SmartParking-1/commit/e87729994f3986f430d583ef11bef27f4c07dfb9) | 05/10 | פס הלדים (NeoPixel על D26) משולב במערכת: ירוק פנוי, אדום תפוס (יום אחרי בדיקת החומרה) |
-| [`00c99ce`](https://github.com/Idosssss/SmartParking-1/commit/00c99ce82416165e812fa615c9a634304371351d) | 05/10 | מכונית שהחיישן האמיתי אישר לא משתחררת יותר |
-| [`d879bf4`](https://github.com/Idosssss/SmartParking-1/commit/d879bf468b7472130ed04705b2759f89f5258902) | 19/10 | מחקר הסימולציה ודוח ה-PDF (הגרסה האחרונה לפני הבדיקה) |
+| [`00c99ce`](https://github.com/Idosssss/SmartParking-1/commit/00c99ce82416165e812fa615c9a634304371351d) | 05/10 | מכונית שהחיישן האמיתי אישר לא משתחררת יותר. **זו הגרסה שהוצגה בהדגמת הפרויקט ב-18/10** |
+| (אין קומיט) | 18/10 | הדגמת הפרויקט (שלב 2). כאן הבנו שנדרש מחקר סימולציה |
+| [`d879bf4`](https://github.com/Idosssss/SmartParking-1/commit/d879bf468b7472130ed04705b2759f89f5258902) | 19/10 | מחקר הסימולציה ודוח ה-PDF, יום אחרי ההדגמה. **זו הגרסה שהוגשה ב-25/10** |
 
 בנוסף ל-GitHub, גם יומן הפריסות של Vercel רושם בשרת של Vercel מתי כל גרסה עלתה לאוויר, ואי אפשר לשנות אותו בדיעבד. נשמח לשלוח צילום מסך שלו.
 
@@ -87,13 +89,13 @@ flowchart LR
 - **המידע עובר רק בכבל ה-USB** (Serial ב-115200), שורת JSON כל 150 מילישניות. הדפדפן קורא את הכבל ישירות דרך Web Serial, בלי שרת באמצע.
 - **Vercel רק מגיש את קבצי האתר**, כמו כל אתר סטטי. אחרי שהדף נטען, אף מדידה לא יוצאת מהמחשב.
   - אין באפליקציה קוד שרת, אין API ואין WebSocket.
-  - הבקשה היחידה לרשת בכל האפליקציה טוענת קובץ תוצאות קבוע של מחקר הסימולציה: [בגרסה שנבדקה](https://github.com/Idosssss/SmartParking-1/blob/d879bf468b7472130ed04705b2759f89f5258902/src/pages/SimulationPage.tsx#L48).
+  - בגרסה שהוצגה בהדגמה (18/10) האפליקציה לא שלחה אף בקשה לרשת. היום יש בקשה אחת בלבד, שטוענת קובץ תוצאות קבוע של מחקר הסימולציה.
   - אפשר לראות את זה בעצמכם: בלשונית Network של Chrome לא מופיעה אף בקשה בזמן שהלוח שולח נתונים. מצורף סרטון.
 - **כך גם היה כתוב בחומר שהוגש:**
-  - הכותרת של קוד הלוח: "The board streams one JSON line per sample over USB serial... The web app reads these lines" ([sketch L7-11](https://github.com/Idosssss/SmartParking-1/blob/d879bf468b7472130ed04705b2759f89f5258902/hardware/smart_parking/smart_parking.ino#L7-L11)).
-  - ה-README: "streams ... over USB serial at 115200 baud", ו-Chrome/Edge נדרשים בגלל Web Serial ([README L116-120](https://github.com/Idosssss/SmartParking-1/blob/d879bf468b7472130ed04705b2759f89f5258902/README.md#L116-L120)).
-- **מקור אפשרי לבלבול, ואנחנו לוקחים עליו אחריות:** בסוף ה-README נשאר סעיף ישן מהגרסה הראשונה של הפרויקט, שהייתה סימולציה בלבד ("Where this is headed"). הוא תיאר תוכנית עתידית לחבר את החומרה "over MQTT/HTTP" ([README L184-190](https://github.com/Idosssss/SmartParking-1/blob/d879bf468b7472130ed04705b2759f89f5258902/README.md#L184-L190)). המימוש בפועל היה USB בלבד, כמו שכתוב בסעיף החומרה ובקוד הלוח. הסעיף הישן הוסר.
-- **בגרסה שנבדקה לא היה WiFi בכלל.** אפשר לראות שאין בקוד הלוח של [`d879bf4`](https://github.com/Idosssss/SmartParking-1/blob/d879bf468b7472130ed04705b2759f89f5258902/hardware/smart_parking/smart_parking.ino) שום קוד רשת.
+  - הכותרת של קוד הלוח: "The board streams one JSON line per sample over USB serial... The web app reads these lines" ([sketch L7-11](https://github.com/Idosssss/SmartParking-1/blob/00c99ce82416165e812fa615c9a634304371351d/hardware/smart_parking/smart_parking.ino#L7-L11)).
+  - ה-README: "streams ... over USB serial at 115200 baud", ו-Chrome/Edge נדרשים בגלל Web Serial ([README L113-117](https://github.com/Idosssss/SmartParking-1/blob/00c99ce82416165e812fa615c9a634304371351d/README.md#L113-L117)).
+- **מקור אפשרי לבלבול, ואנחנו לוקחים עליו אחריות:** בסוף ה-README נשאר סעיף ישן מהגרסה הראשונה של הפרויקט, שהייתה סימולציה בלבד ("Where this is headed"). הוא תיאר תוכנית עתידית לחבר את החומרה "over MQTT/HTTP" ([README L145-151](https://github.com/Idosssss/SmartParking-1/blob/00c99ce82416165e812fa615c9a634304371351d/README.md#L145-L151)). המימוש בפועל היה USB בלבד, כמו שכתוב בסעיף החומרה ובקוד הלוח. הסעיף הישן הוסר.
+- **בגרסה שנבדקה לא היה WiFi בכלל.** אפשר לראות שאין בקוד הלוח של [`d879bf4`](https://github.com/Idosssss/SmartParking-1/blob/00c99ce82416165e812fa615c9a634304371351d/hardware/smart_parking/smart_parking.ino) שום קוד רשת.
   - אחרי ההערות הוספנו WiFi כאפשרות: דף סטטוס קטן שהלוח עצמו מגיש, ועדכון קושחה באוויר. גם זה לא ענן.
   - האפשרות כבויה כברירת מחדל ונבדקה רק בהידור, וכך כתוב גם [בתיעוד](TESTING.md).
 
@@ -105,11 +107,11 @@ flowchart LR
 
 **מה היה.**
 - המערכת לא תלויה באינטרנט, ולכן נפילת אינטרנט לא משפיעה עליה.
-- **החומרה כן טיפלה בניתוק, כבר בגרסה שנבדקה:** הלוח ממשיך לזהות ולהדליק את הלדים גם כשאין קשר עם האפליקציה. זה היה עיקרון תכנון מוצהר: "The LEDs work on their own, so the spot shows OPEN / TAKEN even when the board is not connected to the app" ([sketch L10-11](https://github.com/Idosssss/SmartParking-1/blob/d879bf468b7472130ed04705b2759f89f5258902/hardware/smart_parking/smart_parking.ino#L10-L11), [README L88-89](https://github.com/Idosssss/SmartParking-1/blob/d879bf468b7472130ed04705b2759f89f5258902/README.md#L88-L89)).
-- הקשר שכן יכול ליפול הוא ה-USB, והאפליקציה טיפלה בו כבר בגרסה שנבדקה:
-  - [הודעת "Lost connection to the board"](https://github.com/Idosssss/SmartParking-1/blob/d879bf468b7472130ed04705b2759f89f5258902/src/hardware/useSerialSensors.ts#L63)
-  - [הודעה כשהפורט תפוס בתוכנה אחרת](https://github.com/Idosssss/SmartParking-1/blob/d879bf468b7472130ed04705b2759f89f5258902/src/hardware/useSerialSensors.ts#L32)
-  - [רישום ביומן האירועים](https://github.com/Idosssss/SmartParking-1/blob/d879bf468b7472130ed04705b2759f89f5258902/src/App.tsx#L285)
+- **החומרה כן טיפלה בניתוק, כבר בגרסה שהוצגה בהדגמה:** הלוח ממשיך לזהות ולהדליק את הלדים גם כשאין קשר עם האפליקציה. זה היה עיקרון תכנון מוצהר: "The LEDs work on their own, so the spot shows OPEN / TAKEN even when the board is not connected to the app" ([sketch L10-11](https://github.com/Idosssss/SmartParking-1/blob/00c99ce82416165e812fa615c9a634304371351d/hardware/smart_parking/smart_parking.ino#L10-L11), [README L85-86](https://github.com/Idosssss/SmartParking-1/blob/00c99ce82416165e812fa615c9a634304371351d/README.md#L85-L86)).
+- הקשר שכן יכול ליפול הוא ה-USB, והאפליקציה טיפלה בו כבר בגרסה שהוצגה בהדגמה:
+  - [הודעת "Lost connection to the board"](https://github.com/Idosssss/SmartParking-1/blob/00c99ce82416165e812fa615c9a634304371351d/src/hardware/useSerialSensors.ts#L63)
+  - [הודעה כשהפורט תפוס בתוכנה אחרת](https://github.com/Idosssss/SmartParking-1/blob/00c99ce82416165e812fa615c9a634304371351d/src/hardware/useSerialSensors.ts#L32)
+  - [רישום ביומן האירועים](https://github.com/Idosssss/SmartParking-1/blob/00c99ce82416165e812fa615c9a634304371351d/src/App.tsx#L285)
 - מה שבאמת היה חסר הוא **נורת אזהרה** על הלוח, שמראה שהקשר נפל. כאן ההערה נכונה.
 
 **מה עשינו.**
@@ -128,6 +130,13 @@ flowchart LR
 ---
 
 ## 3. שלב 3: הסימולציה והאלגוריתם
+
+**לוח הזמנים של המחקר.** את הדרישה למחקר סימולציה הבנו רק במפגש של שלב 2, ב-18/10. כבר למחרת, ב-19/10 בשעה 14:31, המחקר המלא היה במאגר ([`d879bf4`](https://github.com/Idosssss/SmartParking-1/commit/d879bf468b7472130ed04705b2759f89f5258902)):
+- סימולטור, ו-5,000 ימים מדומים בהשוואה מזווגת
+- 7 ניתוחי רגישות ו-7 בדיקות נכונות אוטומטיות
+- דוח של 13 עמודים
+
+ההערות בשלב 3 מתייחסות לעבודה שנבנתה בפחות משבוע מהרגע שהבנו שהיא נדרשת.
 
 ### "כמה נהגים עלולים לקבל הכוונה לאותו מקום? לא ברור מדוע שהמערכת תאפשר כזה דבר"
 
@@ -204,7 +213,7 @@ flowchart LR
 
 ### "תיעוד ברמה נמוכה"
 
-**מה היה.** בגרסה שנבדקה היו:
+**מה היה.** מלבד המדריך למשתמש ומדריך המתכנת שהוגשו ב-25/10, במאגר היו:
 - README של 190 שורות: התקנה, מבנה הפרויקט, חיווט מלא של החיישנים והלדים, הוראות העלאה וחיבור, וסיכום המחקר.
 - דוח מחקר של 13 עמודים ב-9 פרקים: המודל, האלגוריתם עם פסאודו-קוד, שיטת הבדיקה, התוצאות עם רווחי סמך, והמגבלות.
 - הערות מפורטות בקוד, למשל בכותרת של קוד הלוח.
