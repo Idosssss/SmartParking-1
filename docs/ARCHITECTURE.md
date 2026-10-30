@@ -57,7 +57,7 @@ The logic classes have no Arduino code at all, so they are unit-tested on a norm
 | `secrets.h.example` | WiFi name/password and OTA password template (`secrets.h` is git-ignored) | no |
 | `ir_math.h` | raw ADC value to centimetres (lab formula) | no |
 | `distance_sensor.h` | `IrDistanceSensor`: non-blocking averaging of 25 samples; `AnalogReader` interface | no (reads through the interface) |
-| `hardware_io.h` | `PinAnalogReader`: the only `analogRead()` in the firmware | **yes** |
+| `hardware_io.h` | `PinAnalogReader` (the only `analogRead()`), `PinButtonReader` (the BOOT button), `UsbSerialPort` (the only use of `Serial`), `Esp32Board` (clock, ADC set-up, restart) | **yes** |
 | `presence_detector.h` | `PresenceDetector`: debounce + hysteresis | no |
 | `sensor_health.h` | `SensorHealth`: finds unplugged / shorted / noisy sensors | no |
 | `mock_source.h` | `MockScenario`: generated car-arrives / parks / leaves data | no |
@@ -70,7 +70,7 @@ The logic classes have no Arduino code at all, so they are unit-tested on a norm
 | `status_leds.h` | `StatusLeds`: the LED strip patterns, including the link warning on the first LED | **yes** |
 | `link_monitor.h` | `LinkMonitor`: is the app still pinging? (standalone / connected / lost) | no |
 | `wifi_service.h` | `WifiService`: optional WiFi, status page, OTA (off by default) | **yes** |
-| `node.h` | `SmartParkingNode`: owns the objects above and runs the loop | wires them together |
+| `node.h` | `SmartParkingNode`: owns the objects above and runs the loop. It makes no hardware call of its own | no (only through the objects above) |
 | `smart_parking.ino` | `setup()` / `loop()` only | - |
 
 ## Web app

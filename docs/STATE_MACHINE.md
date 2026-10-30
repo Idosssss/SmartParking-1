@@ -76,4 +76,49 @@ stateDiagram-v2
     connected --> connected: no data for 2.5 s = "not responding" (detection paused), data returns = resumes
 ```
 
+## The board's link to the app (`link_monitor.h`)
+
+```mermaid
+stateDiagram-v2
+    [*] --> Standalone
+    Standalone --> Connected: any line from the app (PING, GET, SET...)
+    Connected --> Connected: a line arrives (at least one per second)
+    Connected --> Lost: 3 s without a line
+    Lost --> Connected: a line arrives
+```
+
+| State | First LED | Meaning |
+| --- | --- | --- |
+| Standalone | spot colour | no app has connected since power-up; working alone is normal |
+| Connected | spot colour | the app pings every second |
+| Lost | blinks amber (cyan if WiFi is on and the network is gone) | the app stopped talking; the board keeps deciding open / taken by itself |
+
+## A car's trip (web app, `App.tsx`)
+
+```mermaid
+stateDiagram-v2
+    [*] --> idle
+    idle --> detecting: entrance sensor D34 (or the button / F key)
+    idle --> waiting: a car arrives but no free spot can be reached
+    waiting --> detecting: a spot frees up or a lane reopens
+    detecting --> searching: 1 s
+    searching --> navigating: nearest free spot found and held for this driver
+    searching --> waiting: the last spot went meanwhile
+    navigating --> navigating: the spot was taken by a driver without the app = reroute
+    navigating --> arrived: reached the spot (at the real spot: when sensor D35 confirms)
+    navigating --> idle: Cancel
+    arrived --> idle: Done
+    arrived --> detecting: the next car arrives
+```
+
+- **Several app drivers at once.** While the phone's car is on its way, a car that arrives is guided at the same
+  time, as "another app driver", to a different spot. Every spot the app gives out is held until that driver
+  parks, so no spot is ever offered to two app drivers.
+- **Waiting at the gate.** Only when every free spot is taken, held or behind a closed lane. At most 5 cars wait,
+  and they drive in first come, first served.
+- **Locked map.** While a car is navigating, spots and lanes cannot be changed by clicking.
+
+Every timing above is in `src/config/constants.ts`; the demo settings and the edge-case timings are in
+`src/config/demoSettings.ts`.
+
 Details: [docs/EDGE_CASES.md](EDGE_CASES.md).

@@ -27,21 +27,21 @@
 class SmartParkingNode {
  public:
   void begin() {
-    Serial.begin(SERIAL_BAUD);
-    analogReadResolution(12);
+    usb_.begin(SERIAL_BAUD);
+    board_.begin();
     entranceAdc_.begin();
     spotAdc_.begin();
-    if (PIN_USER_BUTTON >= 0) pinMode(PIN_USER_BUTTON, INPUT_PULLUP);
+    buttonPin_.begin();
 
     settings_ = store_.load();
     applySettings();
     leds_.begin(settings_.brightness);
     wifi_.begin();
-    bootStartMs_ = millis();
+    bootStartMs_ = board_.nowMs();
   }
 
   void update() {
-    uint32_t now = millis();
+    uint32_t now = board_.nowMs();
     bootFinished_ = now - bootStartMs_ >= BOOT_LED_TEST_MS;
 
     readSerial();
@@ -160,15 +160,15 @@ class SmartParkingNode {
 
   // ---- serial commands ---------------------------------------------------------------
   void readSerial() {
-    while (Serial.available() > 0) {
-      char ch = static_cast<char>(Serial.read());
+    while (usb_.available()) {
+      char ch = usb_.read();
       if (ch == '\n' || ch == '\r') {
         if (lineTooLong_) {
           emitError("line too long");
         } else if (lineLen_ > 0) {
-          link_.heard(millis());  // any line at all means the app is there
+          link_.heard(board_.nowMs());  // any line at all means the app is there
           line_[lineLen_] = '\0';
-          handleCommand(parseCommand(line_), millis());
+          handleCommand(parseCommand(line_), board_.nowMs());
         }
         lineLen_ = 0;
         lineTooLong_ = false;
@@ -185,11 +185,11 @@ class SmartParkingNode {
       case CommandType::Empty: break;
       case CommandType::Ping: break;  // only keeps the link alive (see link_monitor.h)
       case CommandType::Help:
-        Serial.println("{\"help\":\"GET | SET SPOT_CM|ENTRANCE_CM|BRIGHTNESS <n> | MOCK ON|OFF | DEBUG ON|OFF | CAL SPOT|ENTRANCE | RESET | REBOOT | PING\"}");
+        usb_.println("{\"help\":\"GET | SET SPOT_CM|ENTRANCE_CM|BRIGHTNESS <n> | MOCK ON|OFF | DEBUG ON|OFF | CAL SPOT|ENTRANCE | RESET | REBOOT | PING\"}");
         break;
       case CommandType::Get: {
         char buf[160];
-        if (formatConfig(buf, sizeof(buf), settings_.spotTakenCm, settings_.entranceCarCm, settings_.brightness, mock_, debug_)) Serial.println(buf);
+        if (formatConfig(buf, sizeof(buf), settings_.spotTakenCm, settings_.entranceCarCm, settings_.brightness, mock_, debug_)) usb_.println(buf);
         break;
       }
       case CommandType::Set: handleSet(c); break;
@@ -208,8 +208,8 @@ class SmartParkingNode {
         break;
       case CommandType::Reboot:
         emitAck("rebooting");
-        Serial.flush();
-        ESP.restart();
+        usb_.flush();
+        board_.restart();
         break;
       case CommandType::Invalid: emitError(c.error); break;
     }
@@ -239,8 +239,8 @@ class SmartParkingNode {
   // ---- physical button ---------------------------------------------------------------
   // short press: switch mock mode on/off      long press (2 s): factory reset
   void readButton(uint32_t now) {
-    if (PIN_USER_BUTTON < 0) return;
-    ButtonEvent ev = button_.update(digitalRead(PIN_USER_BUTTON) == LOW, now);
+    if (!buttonPin_.present()) return;
+    ButtonEvent ev = button_.update(buttonPin_.pressed(), now);
     if (ev == ButtonEvent::ShortPress) {
       setMock(!mock_);
     } else if (ev == ButtonEvent::LongPress) {
@@ -265,32 +265,35 @@ class SmartParkingNode {
 
     char buf[320];
     if (formatFrame(buf, sizeof(buf), f)) {
-      Serial.println(buf);
+      usb_.println(buf);
       wifi_.setStatusLine(buf);
     }
     if (debug_) {
       char dbg[160];
       if (formatDebug(dbg, sizeof(dbg), entranceSensor_.avgRaw(), spotSensor_.avgRaw(), entranceSensor_.stdDevRaw(),
                       spotSensor_.stdDevRaw(), entranceSensor_.volts(), spotSensor_.volts())) {
-        Serial.println(dbg);
+        usb_.println(dbg);
       }
     }
   }
 
   void emitAck(const char* what) {
     char buf[64];
-    if (formatAck(buf, sizeof(buf), what)) Serial.println(buf);
+    if (formatAck(buf, sizeof(buf), what)) usb_.println(buf);
   }
   void emitAckValue(const char* what, float value) {
     char buf[80];
-    if (formatAckValue(buf, sizeof(buf), what, value)) Serial.println(buf);
+    if (formatAckValue(buf, sizeof(buf), what, value)) usb_.println(buf);
   }
   void emitError(const char* why) {
     char buf[96];
-    if (formatError(buf, sizeof(buf), why)) Serial.println(buf);
+    if (formatError(buf, sizeof(buf), why)) usb_.println(buf);
   }
 
   // ---- hardware (each object owns one job) -------------------------------------------
+  Esp32Board board_;
+  UsbSerialPort usb_;
+  PinButtonReader buttonPin_{PIN_USER_BUTTON};
   PinAnalogReader entranceAdc_{PIN_ENTRANCE_SENSOR};
   PinAnalogReader spotAdc_{PIN_SPOT_SENSOR};
   IrDistanceSensor entranceSensor_{entranceAdc_};

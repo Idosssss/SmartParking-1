@@ -25,7 +25,9 @@ const NAV: { route: Route; href: string; label: string; icon: IconName }[] = [
 ];
 
 const RESOURCES: { href: string; label: string; icon: IconName }[] = [
-  { href: `${REPO}/tree/main/docs`, label: 'Documentation', icon: 'book' },
+  { href: `${REPO}/blob/main/docs/USER_GUIDE.md`, label: 'User guide', icon: 'book' },
+  { href: `${REPO}/blob/main/docs/USER_GUIDE.he.md`, label: 'מדריך למשתמש', icon: 'book' },
+  { href: `${REPO}/tree/main/docs`, label: 'Documentation', icon: 'file' },
   { href: `${REPO}`, label: 'Source code', icon: 'code' },
   { href: `${import.meta.env.BASE_URL}Smart-Parking-Simulation-Report.pdf`, label: 'Study report (PDF)', icon: 'file' },
 ];

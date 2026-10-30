@@ -8,6 +8,11 @@ export const AMBIENT_MS_PER_CELL = 550;
 export const DETECT_MS = 1000;
 export const SEARCH_MS = 1000;
 export const PING_MS = 700;
+/** How long the "rerouting" banner stays on the phone. */
+export const REROUTE_NOTICE_MS = 2600;
+/** Pause before the next car in line drives in: longer after an arrival, so "You've arrived" can be read. */
+export const NEXT_CAR_AFTER_ARRIVAL_MS = 1800;
+export const NEXT_CAR_MS = 700;
 
 // ---- simulated traffic ------------------------------------------------------------
 export const AMBIENT_SPAWN_MS = 3200;

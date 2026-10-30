@@ -19,12 +19,22 @@ import { generateLot } from './lot/generateLot';
 import { findNearestFreeSpot, buildRouteToSpot, reachableSpotIds, withLaneClosed, type RouteResult } from './lot/pathfinding';
 import { buildDirections } from './lot/directions';
 import type { GridPoint, LotModel, Spot } from './lot/types';
-import { DEFAULT_HARDWARE_SPOT_ID, DETECT_MS, PING_MS, SEARCH_MS, SENSOR_FAR_CM } from './config/constants';
+import {
+  DEFAULT_HARDWARE_SPOT_ID,
+  DETECT_MS,
+  NEXT_CAR_AFTER_ARRIVAL_MS,
+  NEXT_CAR_MS,
+  PING_MS,
+  REROUTE_NOTICE_MS,
+  SEARCH_MS,
+  SENSOR_FAR_CM,
+} from './config/constants';
 import {
   ambientMsPerCell,
   DEFAULT_DEMO_SETTINGS,
   MAX_QUEUE,
   msPerCell,
+  SCENARIO_TIMING,
   SPOT_STEALING,
   TRAFFIC_LEVELS,
   type DemoSettings,
@@ -347,7 +357,7 @@ function App({ active = true }: { active?: boolean }) {
         prepareLot(() => true);
         setLiveTraffic(false);
         queueCars(1, 'Car at the entrance but the lot is full. It waits at the gate for a spot to free up.');
-        later(4000, () => {
+        later(SCENARIO_TIMING.driverLeavesMs, () => {
           setLot((prev) => ({ ...prev, spots: prev.spots.map((s) => (s.id === 'S28' ? { ...s, occupied: false } : s)) }));
           const spot = lotRef.current.spots.find((s) => s.id === 'S28');
           if (spot) addPing(spot.row, spot.col);
@@ -372,8 +382,8 @@ function App({ active = true }: { active?: boolean }) {
         sendCarIn();
         logActivity('Three app drivers arrive together', 'info');
         // The phone's car is being detected; the other two are guided at the same time, each to a held spot.
-        later(150, () => guideAnotherDriver());
-        later(300, () => guideAnotherDriver());
+        later(SCENARIO_TIMING.secondDriverMs, () => guideAnotherDriver());
+        later(SCENARIO_TIMING.thirdDriverMs, () => guideAnotherDriver());
         break;
       case 'rush':
         prepareLot((s) => spotNumber(s) % 3 !== 0);
@@ -387,12 +397,12 @@ function App({ active = true }: { active?: boolean }) {
         hw.emulator.setEntranceCm(SENSOR_FAR_CM);
         hw.emulator.setOn(true);
         // Give the emulator a moment to stream "nothing there", then one short spike.
-        later(900, () => {
+        later(SCENARIO_TIMING.glitchSettleMs, () => {
           glitchWatch.current = { until: performance.now() + 1500, triggered: false };
           hw.emulator.setEntranceCm(5);
-          later(140, () => hw.emulator.setEntranceCm(SENSOR_FAR_CM));
+          later(SCENARIO_TIMING.glitchSpikeMs, () => hw.emulator.setEntranceCm(SENSOR_FAR_CM));
         });
-        later(2500, () => {
+        later(SCENARIO_TIMING.glitchReportMs, () => {
           const watch = glitchWatch.current;
           glitchWatch.current = null;
           if (watch?.triggered) logActivity('The one close reading was reported as a car', 'warning');
@@ -627,7 +637,7 @@ function App({ active = true }: { active?: boolean }) {
         }
         logActivity(`The next car in line drives in${queueRef.current ? ` (${queueRef.current} still waiting)` : ''}`, 'info');
       },
-      userStatus === 'arrived' ? 1800 : 700,
+      userStatus === 'arrived' ? NEXT_CAR_AFTER_ARRIVAL_MS : NEXT_CAR_MS,
     );
     return () => clearTimeout(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -782,7 +792,7 @@ function App({ active = true }: { active?: boolean }) {
             const notice = `Spot ${route.spot.id} was just taken — rerouting to ${alt.spot.id}`;
             setRerouteNotice(notice);
             logActivity(`${notice}`, 'warning');
-            setTimeout(() => setRerouteNotice(null), 2600);
+            setTimeout(() => setRerouteNotice(null), REROUTE_NOTICE_MS);
           } else {
             userStatusRef.current = 'idle';
             userRouteRef.current = null;

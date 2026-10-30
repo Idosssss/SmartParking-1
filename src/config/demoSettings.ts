@@ -40,3 +40,16 @@ export const ambientMsPerCell = (s: DemoSettings) => AMBIENT_MS_PER_CELL * DRIVE
 
 /** Cars waiting at the gate while another car is being guided, or while no spot can be reached. */
 export const MAX_QUEUE = 5;
+
+/** Timings of the one-click edge cases (milliseconds). */
+export const SCENARIO_TIMING = {
+  /** "Lot full": a driver leaves this long after the car arrives at the gate. */
+  driverLeavesMs: 4000,
+  /** "Three cars at once": when the second and third app drivers arrive. */
+  secondDriverMs: 150,
+  thirdDriverMs: 300,
+  /** "Noisy sensor reading": let the emulator settle, the spike length, and when the result is reported. */
+  glitchSettleMs: 900,
+  glitchSpikeMs: 140,
+  glitchReportMs: 2500,
+} as const;

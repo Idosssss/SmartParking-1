@@ -7,7 +7,8 @@ An IoT parking system: an **ESP32** with two IR sensors and an LED strip senses 
 measures how much driving that saves.
 
 **Live site:** https://technionparking.vercel.app · **How it works (Hebrew):** [docs/HOW_IT_WORKS.he.md](docs/HOW_IT_WORKS.he.md) ·
-**Response to the review:** [docs/REVIEW_RESPONSE.he.md](docs/REVIEW_RESPONSE.he.md)
+**Response to the review:** [docs/REVIEW_RESPONSE.he.md](docs/REVIEW_RESPONSE.he.md) ·
+**Robustness checklist, file by file (Hebrew):** [docs/ROBUSTNESS.he.md](docs/ROBUSTNESS.he.md)
 
 The ESP32 talks to the computer over the **USB cable only** (Web Serial). There is no cloud and no server: Vercel only
 hosts the web page's files, and once the page has loaded no reading ever leaves the computer.
